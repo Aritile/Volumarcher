@@ -20,10 +20,26 @@ using namespace Graphics;
 
 enum class Test
 {
-	SampleCountSingle
+	BaseSampleCountSingle,
+	None
 };
 
 static Test g_currentTest;
+
+static constexpr uint MAX_FRAMES_PER_TEST_PHASE = 300;
+
+static constexpr uint SampleCountTestSamples[10]
+{
+	4,
+	8,
+	16,
+	32,
+	64,
+	128,
+	256,
+	512,
+	1024,
+};
 
 
 class PerformanceTestApplication : public GameCore::IGameApp
@@ -43,6 +59,7 @@ public:
 
 	void RenderRasterizerPass();
 
+
 	void RenderScene(void) override;
 
 private:
@@ -54,6 +71,11 @@ private:
 	const float m_cameraSpeed{2.f};
 	const float m_cameraRotSpeed{0.7f};
 
+
+	int framesInTest = 0;
+	int testPhase;
+	ScopedTimer* pixTestTimer;
+	CpuTimer cpuTestTimer;
 
 	//Cube/Rasterizor stuff
 	StructuredBuffer vertexBuffer;
@@ -196,7 +218,7 @@ void PerformanceTestApplication::Startup(void)
 	Utility::Printf("Creating Volumetric Context\n");
 	CpuTimer startupTimer;
 	startupTimer.Start();
-	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 5.f}};
+	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 3.5f), 4.f, 5.f}};
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, 70.f};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
 	PostEffects::BloomEnable = false;
@@ -205,7 +227,23 @@ void PerformanceTestApplication::Startup(void)
 	startupTimer.Stop();
 
 	Utility::Printf("VolumetricContext Startup Time: %fs\n", startupTimer.GetTime());
+
+
+	switch (g_currentTest)
+	{
+	case Test::BaseSampleCountSingle:
+		testPhase = 0;
+			framesInTest = 0;
+		std::wstring testName = L"BaseSampleCountTest, Samples: " + std::to_wstring(
+				static_cast<int>(SampleCountTestSamples[testPhase]));
+		Utility::Printf("Starting test: %ls\n", testName);
+		pixTestTimer = new ScopedTimer(testName);
+		cpuTestTimer.Reset();
+		cpuTestTimer.Start();
+		m_volumetricContext->SetSettings({static_cast<int>(SampleCountTestSamples[testPhase]), 16, 4});
+	}
 }
+
 
 void PerformanceTestApplication::Cleanup(void)
 {
@@ -215,32 +253,66 @@ void PerformanceTestApplication::Cleanup(void)
 void PerformanceTestApplication::Update(const float _deltaTime)
 {
 	ScopedTimer _prof(L"Update State");
+	framesInTest++;
 
-	if (GameInput::IsFirstPressed(GameInput::DigitalInput::kKey_tab))
+	switch (g_currentTest)
 	{
-		GameCore::g_mouseLocked = !GameCore::g_mouseLocked;
-		static int cursorPos[2]{0, 0};
-	}
-	if (GameCore::g_mouseLocked)
-	{
-		//Rotation
-		m_camYaw -= GameInput::GetAnalogInput(GameInput::kAnalogMouseX) * m_cameraRotSpeed;
-		m_camPitch -= GameInput::GetAnalogInput(GameInput::kAnalogMouseY) * m_cameraRotSpeed;
-		m_camPitch = glm::clamp(m_camPitch, -89.99f, 89.99f);
-		m_camRot = glm::angleAxis(m_camYaw, glm::vec3(0, 1, 0)) * glm::angleAxis(m_camPitch, glm::vec3(1, 0, 0));
+	case Test::BaseSampleCountSingle:
+		if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
+			{
+				delete pixTestTimer;
+				cpuTestTimer.Stop();
+				float hz = static_cast<float>(1.0 / (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE)));
+				Utility::Printf("Test phase ran for: %fs | %fhz \n", cpuTestTimer.GetTime(), hz);
+
+				testPhase++;
+				framesInTest = 0;
+				if (testPhase >= _countof(SampleCountTestSamples))
+				{
+					g_currentTest = Test::None;
+					testPhase = 0;
+					framesInTest = 0;
+					return;
+				}
+				std::wstring testName = L"BaseSampleCountTest, Samples: " + std::to_wstring(
+					static_cast<int>(SampleCountTestSamples[testPhase]));
+				Utility::Printf("Starting test: %ls\n", testName.c_str());
+				pixTestTimer = new ScopedTimer(testName);
+				m_volumetricContext->SetSettings({static_cast<int>(SampleCountTestSamples[testPhase]), 16, 4});
+
+				cpuTestTimer.Reset();
+				cpuTestTimer.Start();
+			}
+		break;
 	}
 
 
-	//Movement
-	glm::vec3 input{0.f};
-	if (GameInput::IsPressed(GameInput::kKey_a)) input.x += 1;
-	if (GameInput::IsPressed(GameInput::kKey_d)) input.x -= 1;
-	if (GameInput::IsPressed(GameInput::kKey_w)) input.z += 1;
-	if (GameInput::IsPressed(GameInput::kKey_s)) input.z -= 1;
-	if (GameInput::IsPressed(GameInput::kKey_space)) input.y += 1;
-	if (GameInput::IsPressed(GameInput::kKey_c)) input.y -= 1;
-	if (glm::dot(input, input) > 0) input = normalize(input);
-	m_camPos += (m_camRot * input) * m_cameraSpeed * _deltaTime;
+	//if (GameInput::IsFirstPressed(GameInput::DigitalInput::kKey_tab))
+	//{
+	//	GameCore::g_mouseLocked = !GameCore::g_mouseLocked;
+	//	static int cursorPos[2]{0, 0};
+	//}
+	//if (GameCore::g_mouseLocked)
+	//{
+	//	//Rotation
+	//	m_camYaw -= GameInput::GetAnalogInput(GameInput::kAnalogMouseX) * m_cameraRotSpeed;
+	//	m_camPitch -= GameInput::GetAnalogInput(GameInput::kAnalogMouseY) * m_cameraRotSpeed;
+	//	m_camPitch = glm::clamp(m_camPitch, -89.99f, 89.99f);
+	//	m_camRot = glm::angleAxis(m_camYaw, glm::vec3(0, 1, 0)) * glm::angleAxis(m_camPitch, glm::vec3(1, 0, 0));
+	//}
+
+
+	////Movement
+	//glm::vec3 input{0.f};
+	//if (GameInput::IsPressed(GameInput::kKey_a)) input.x += 1;
+	//if (GameInput::IsPressed(GameInput::kKey_d)) input.x -= 1;
+	//if (GameInput::IsPressed(GameInput::kKey_w)) input.z += 1;
+	//if (GameInput::IsPressed(GameInput::kKey_s)) input.z -= 1;
+	//if (GameInput::IsPressed(GameInput::kKey_space)) input.y += 1;
+	//if (GameInput::IsPressed(GameInput::kKey_c)) input.y -= 1;
+	//if (glm::dot(input, input) > 0) input = normalize(input);
+	//m_camPos += (m_camRot * input) * m_cameraSpeed * _deltaTime;
 }
 
 
@@ -290,14 +362,16 @@ void PerformanceTestApplication::RenderScene(void)
 {
 	switch (g_currentTest)
 	{
-	case Test::SampleCountSingle:
-		m_volumetricContext->Render(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer,
+	case Test::BaseSampleCountSingle:
+		m_volumetricContext->Render(g_SceneColorBuffer,
+		                            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
+		                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, g_SceneDepthBuffer,
 		                            m_camPos,
 		                            m_camRot);
 		break;
 	}
 
-	RenderRasterizerPass();
-	m_volumetricContext->Render(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer, m_camPos,
-	                            m_camRot);
+	//RenderRasterizerPass();
+	//m_volumetricContext->Render(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer, m_camPos,
+	//                            m_camRot);
 }

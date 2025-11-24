@@ -40,6 +40,9 @@ namespace Volumarcher
 
 		void SetVolumes(Volume _volumes[VOLUME_AMOUNT]);
 
+		Settings GetSettings() const { return m_settings; }
+		void SetSettings(const Settings _volumetricSettings) { m_settings = _volumetricSettings; }
+
 		void Render(ColorBuffer _outputBuffer, D3D12_RESOURCE_STATES _outputBufferState, DepthBuffer _inputDepth,
 		            glm::vec3 _camPos = glm::vec3{0.f},
 		            glm::quat _camRot = glm::identity<glm::quat>());
