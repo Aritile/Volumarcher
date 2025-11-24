@@ -19,7 +19,9 @@ struct VolumetricCameraSettings
 
 struct VolumetricSettings
 {
+	float3 origin;
 	int baseSampleCount;
+	float3 worldSize;
 	int directLightSampleCount;
 	int ambientSampleCount;
 };

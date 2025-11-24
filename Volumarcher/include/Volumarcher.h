@@ -38,7 +38,10 @@ namespace Volumarcher
 		explicit VolumetricContext(Volume _volumes[VOLUME_AMOUNT], CameraSettings _cameraSettings,
 		                           Settings _settings = {});
 
-		void SetVolumes(Volume _volumes[VOLUME_AMOUNT]);
+
+		//void SetVolumes(Volume _volumes[VOLUME_AMOUNT]);
+
+		void SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size);
 
 		Settings GetSettings() const { return m_settings; }
 		void SetSettings(const Settings _volumetricSettings) { m_settings = _volumetricSettings; }
@@ -50,6 +53,8 @@ namespace Volumarcher
 	private:
 		//TODO: Make this user specified per volume
 		CloudNoise m_noise;
+
+		Texture m_cloudVolumeVoxels;
 
 		ComputePSO m_computePSO;
 		RootSignature m_rs;

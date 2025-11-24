@@ -15,7 +15,7 @@ namespace Volumarcher
 		m_cameraSettings(_cameraSettings),
 		m_settings(_settings)
 	{
-		m_rs.Reset(6, 1);
+		m_rs.Reset(7, 2);
 		//Output texture
 		m_rs[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
 		//Scene depth
@@ -27,6 +27,8 @@ namespace Volumarcher
 		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 		//Noise textures
 		m_rs[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, VOLUME_AMOUNT);
+		//Volume texture
+		m_rs[6].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 1);
 
 		//Linear wrap sampler
 		D3D12_SAMPLER_DESC noiseSamplerDesc{
@@ -35,6 +37,14 @@ namespace Volumarcher
 			{0, 0, 0, 1}, 0, 0
 		};
 		m_rs.InitStaticSampler(0, noiseSamplerDesc);
+		//Linear clamp sampler
+		D3D12_SAMPLER_DESC profileSamplerDesc{
+			D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+			D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER, 0, 0, D3D12_COMPARISON_FUNC_NONE,
+			{0, 0, 0, 1}, 0, 0
+		};
+		m_rs.InitStaticSampler(1, profileSamplerDesc);
+
 
 		m_rs.Finalize(L"RootSig");
 		m_computePSO.SetRootSignature(m_rs);
@@ -44,11 +54,18 @@ namespace Volumarcher
 		m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
 	}
 
-	void VolumetricContext::SetVolumes(Volume _volumes[VOLUME_AMOUNT])
+	void VolumetricContext::SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size)
 	{
-		m_volumeBuffer.Destroy();
-		m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
+		m_cloudVolumeVoxels.Create3D(_size.x * sizeof(float), _size.x, _size.y, _size.z, DXGI_FORMAT_R32_FLOAT,
+		                             _densityGrid.data());
 	}
+
+	//For spherical volumes
+	//void VolumetricContext::SetVolumes(Volume _volumes[VOLUME_AMOUNT])
+	//{
+	//	m_volumeBuffer.Destroy();
+	//	m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
+	//}
 
 	void VolumetricContext::Render(ColorBuffer _outputBuffer, D3D12_RESOURCE_STATES _outputBufferState,
 	                               DepthBuffer _inputDepth, glm::vec3 _camPos,
@@ -70,7 +87,8 @@ namespace Volumarcher
 			_camPos, screenX, camDir, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar, m_cameraSettings.vFov
 		};
 		VolumetricSettings baseSettings{
-			m_settings.baseSampleCount, m_settings.lightingSampleCount, m_settings.ambientSampleCount
+			glm::vec3(0, 0, 0),
+			m_settings.baseSampleCount, glm::vec3(0.5f), m_settings.lightingSampleCount, m_settings.ambientSampleCount
 		};
 
 
@@ -81,6 +99,8 @@ namespace Volumarcher
 		computeContext.SetDynamicDescriptor(4, 0, m_volumeBuffer.GetSRV());
 		//  Noise textures
 		computeContext.SetDynamicDescriptor(5, 0, m_noise.GetBillowNoise().GetSRV());
+		//Volumes texture
+		computeContext.SetDynamicDescriptor(6, 0, m_cloudVolumeVoxels.GetSRV());
 
 		//End call
 		computeContext.Dispatch(ceil(screenX / 32.f), ceil(screenY / 32.f), 1);

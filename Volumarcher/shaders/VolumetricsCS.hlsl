@@ -16,10 +16,15 @@ cbuffer RenderSettings : register(b1)
 };
 
 
+
 StructuredBuffer<Volume> volumes : register(t1);
 
 Texture3D<float> billowNoise : register(t2);
 SamplerState noiseSampler : register(s0);
+SamplerState profileSampler : register(s1);
+
+Texture3D<float> voxelVolume : register(t3);
+
 
 static const float FAR_PLANE = 6;
 
@@ -56,11 +61,9 @@ float HenyeyGreensteinPhase(float inCosAngle, float inG)
 }
 
 //Sample dimensional profile
-float SampleProfile(int _volumeId, float3 _sample, float _distToVolume2 /*TODO shaped: Remove after implementing*/)
+float SampleProfile(float3 _sample)
 {
-	//Sphere
-    float profile = (1 - _distToVolume2 / sqrt(volumes[_volumeId].squaredRad));
-    return profile;
+    return voxelVolume.SampleLevel(profileSampler, (_sample - renderSettings.origin) * renderSettings.worldSize, 0);
 }
 
 float SampleDensity(float3 _sample, float _profile)
@@ -89,7 +92,7 @@ float GetSummedAmbientDensity(float3 _sample)
             float distToSphere2 = dot(sphereOffset, sphereOffset);
             if (distToSphere2 < volumes[volumeId].squaredRad) // Hit sphere
             {
-                density += SampleDensity(sample, SampleProfile(volumeId, sample, distToSphere2) * volumes[volumeId].baseDensity)*stepSize;
+                density += SampleDensity(sample, SampleProfile(sample) * volumes[volumeId].baseDensity) * stepSize;
             }
         }
     }
@@ -112,8 +115,8 @@ float GetDirectLightDensitySamples(float3 _sample)
             float distToSphere2 = dot(sphereOffset, sphereOffset);
             if (distToSphere2 < volumes[volumeId].squaredRad) // Hit sphere
             {
-                float profile = SampleProfile(volumeId, sample, distToSphere2);
-                totalDensity = SampleDensity(sample, profile)*stepSize;
+                float profile = SampleProfile(sample);
+                totalDensity = SampleDensity(sample, profile) * stepSize;
             }
         }
     }
@@ -171,29 +174,20 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
         float sampleDensity = 0;
         float3 sampleLight = 0;
-        for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
-        {
-            float3 sphereOffset = sample - volumes[volumeId].position;
-            float distToSphere2 = dot(sphereOffset, sphereOffset);
-            if (distToSphere2 < volumes[volumeId].squaredRad) // Hit sphere
-            {
+
                 //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
-                float baseProfile = SampleProfile(volumeId, sample, distToSphere2);
-                //Profile with density
-            	float profile = volumes[volumeId].baseDensity * baseProfile;
-				//Density with high detail noise
-            	sampleDensity += SampleDensity(sample, profile);
+        float profile = SampleProfile(sample);
+
+    	//Density with high detail noise
+        sampleDensity += SampleDensity(sample, profile);
 
                 //Ambient approximation, gives popcorn effect
-                sampleLight += saturate((1 - profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR * PI);
-                float lightAngle = dot(rayDir, -SUN_DIR);
-                float inSunLightDensitySamples = GetDirectLightDensitySamples(sample);
-                float lightVolume = InScatteringApprox(baseProfile, lightAngle, inSunLightDensitySamples);
-                sampleLight += lightVolume *SUN_LIGHT* HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
+        sampleLight += saturate((1 - profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR * PI);
+        float lightAngle = dot(rayDir, -SUN_DIR);
+        float inSunLightDensitySamples = GetDirectLightDensitySamples(sample);
+        float lightVolume = InScatteringApprox(profile, lightAngle, inSunLightDensitySamples);
+        sampleLight += lightVolume * SUN_LIGHT * HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
 
-
-            }
-        }
         light += (sampleLight) * transmittance * sampleDensity * stepSize;
 
         transmittance *= exp(-stepSize * ABSORPTION_SCATTERING * sampleDensity);
