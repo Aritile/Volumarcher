@@ -1,5 +1,3 @@
-
-
 #include "Display.h"
 #include "pch.h"
 #include "../MiniEngine/Core/GameCore.h"
@@ -20,10 +18,18 @@
 using namespace GameCore;
 using namespace Graphics;
 
-class RendererApplication : public GameCore::IGameApp
+enum class Test
+{
+	SampleCountSingle
+};
+
+static Test g_currentTest;
+
+
+class PerformanceTestApplication : public GameCore::IGameApp
 {
 public:
-	RendererApplication()
+	PerformanceTestApplication()
 	{
 	}
 
@@ -34,6 +40,7 @@ public:
 	void Update(float deltaT) override;
 
 	void InitRasterizor();
+
 	void RenderRasterizerPass();
 
 	void RenderScene(void) override;
@@ -128,7 +135,7 @@ struct MatrixBuffer
 #include "CompiledShaders/PixelShader.h"
 #include "CompiledShaders/VertexShader.h"
 
-void RendererApplication::InitRasterizor()
+void PerformanceTestApplication::InitRasterizor()
 {
 	g_RootSig.Reset(1, 0);
 	g_RootSig[0].InitAsConstants(0, sizeof(MatrixBuffer) / sizeof(float)); // Camera mat
@@ -175,11 +182,14 @@ void RendererApplication::InitRasterizor()
 #pragma endregion
 
 
-CREATE_APPLICATION(RendererApplication)
+CREATE_APPLICATION(PerformanceTestApplication)
 
-void RendererApplication::Startup(void)
+void PerformanceTestApplication::Startup(void)
 {
-	Utility::Printf("Starting Volumarcher demo\n");
+	GameCore::g_mouseLocked = false;
+
+
+	Utility::Printf("Starting Volumarcher Performance tester\n");
 
 	InitRasterizor();
 
@@ -197,12 +207,12 @@ void RendererApplication::Startup(void)
 	Utility::Printf("VolumetricContext Startup Time: %fs\n", startupTimer.GetTime());
 }
 
-void RendererApplication::Cleanup(void)
+void PerformanceTestApplication::Cleanup(void)
 {
 	// Free up resources in an orderly fashion
 }
 
-void RendererApplication::Update(const float _deltaTime)
+void PerformanceTestApplication::Update(const float _deltaTime)
 {
 	ScopedTimer _prof(L"Update State");
 
@@ -234,7 +244,7 @@ void RendererApplication::Update(const float _deltaTime)
 }
 
 
-void RendererApplication::RenderRasterizerPass()
+void PerformanceTestApplication::RenderRasterizerPass()
 {
 	GraphicsContext& graphicsContext = GraphicsContext::Begin(L"Graphics Pass");
 	graphicsContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
@@ -276,8 +286,17 @@ void RendererApplication::RenderRasterizerPass()
 }
 
 
-void RendererApplication::RenderScene(void)
+void PerformanceTestApplication::RenderScene(void)
 {
+	switch (g_currentTest)
+	{
+	case Test::SampleCountSingle:
+		m_volumetricContext->Render(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer,
+		                            m_camPos,
+		                            m_camRot);
+		break;
+	}
+
 	RenderRasterizerPass();
 	m_volumetricContext->Render(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer, m_camPos,
 	                            m_camRot);

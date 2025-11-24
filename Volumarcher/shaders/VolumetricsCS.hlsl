@@ -132,9 +132,10 @@ void main(uint3 DTid : SV_DispatchThreadID)
         return;
 
     float2 screenUV = (float2(DTid.xy) + 0.5) / float2(constants.screenResX, constants.screenResY);
+
+    //Get depth
     float screenDepth = sceneDepth.SampleLevel(noiseSampler, screenUV, 0);
     float linearDepth = constants.zNear * constants.zFar / (constants.zFar + (1 - screenDepth) * (constants.zNear - constants.zFar));
-
     float farPlane = min(linearDepth, FAR_PLANE);
 	
 	//Get screen ray
@@ -151,22 +152,22 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float3 rayOrigin = constants.camPos;
     float3 rayDir = mul(normalize(float3(rayX, rayY, 1)), camMat);
 
-
+    //Background (maybe temp or optional if scene already has skybox)
     float3 background = lerp(BACKGROUND_COLOR_DOWN, BACKGROUND_COLOR_UP, saturate((rayDir.y * 0.5) + 0.55));
     if (screenDepth > 0)
         background = outputTexture[DTid.xy];
 
-    float transmittance = 1.0;
-
     static float stepSize = farPlane / STEP_COUNT;
+
     float3 light = 0;
+    float transmittance = 1.0;
 
     //Ray marching steps
     for (int i = 0; i < STEP_COUNT; ++i)
     {
         float3 sample = rayOrigin + rayDir * (i * stepSize);
 
-        float density = 0;
+        float sampleDensity = 0;
         float3 sampleLight = 0;
         for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
         {
@@ -174,11 +175,14 @@ void main(uint3 DTid : SV_DispatchThreadID)
             float distToSphere2 = dot(sphereOffset, sphereOffset);
             if (distToSphere2 < volumes[volumeId].squaredRad) // Hit sphere
             {
-
+                //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
                 float baseProfile = SampleProfile(volumeId, sample, distToSphere2);
-                float profile = volumes[volumeId].baseDensity * baseProfile;
-                density += SampleDensity(sample, profile);
+                //Profile with density
+            	float profile = volumes[volumeId].baseDensity * baseProfile;
+				//Density with high detail noise
+            	sampleDensity += SampleDensity(sample, profile);
 
+                //Ambient approximation, gives popcorn effect
                 sampleLight += saturate((1 - profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR * PI);
                 float lightAngle = dot(rayDir, -SUN_DIR);
                 float inSunLightDensitySamples = GetDirectLightDensitySamples(sample);
@@ -188,9 +192,9 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
             }
         }
-        light += (sampleLight) * transmittance * density * stepSize;
+        light += (sampleLight) * transmittance * sampleDensity * stepSize;
 
-        transmittance *= exp(-stepSize * ABSORPTION_SCATTERING * density);
+        transmittance *= exp(-stepSize * ABSORPTION_SCATTERING * sampleDensity);
     }
     light += transmittance * background;
 
