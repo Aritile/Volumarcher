@@ -1,5 +1,3 @@
-
-
 #include "Display.h"
 #include "pch.h"
 #include "../MiniEngine/Core/GameCore.h"
@@ -34,6 +32,7 @@ public:
 	void Update(float deltaT) override;
 
 	void InitRasterizor();
+
 	void RenderRasterizerPass();
 
 	void RenderScene(void) override;
@@ -186,7 +185,7 @@ void RendererApplication::Startup(void)
 	Utility::Printf("Creating Volumetric Context\n");
 	CpuTimer startupTimer;
 	startupTimer.Start();
-	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 5.f}};
+	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 10.f}};
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, 70.f};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
 	PostEffects::BloomEnable = false;

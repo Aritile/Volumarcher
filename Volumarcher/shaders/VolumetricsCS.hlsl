@@ -7,19 +7,21 @@ Texture2D<float> sceneDepth : register(t0);
 
 cbuffer RootConstants : register(b0)
 {
-    VolumetricConstants constants;
+    VolumetricCameraSettings constants;
 };
+
+cbuffer RenderSettings : register(b1)
+{
+    VolumetricSettings renderSettings;
+};
+
 
 StructuredBuffer<Volume> volumes : register(t1);
 
 Texture3D<float> billowNoise : register(t2);
 SamplerState noiseSampler : register(s0);
 
-static const int STEP_COUNT = 128; // Step count for main ray
-static const int DIRECT_STEP_COUNT = 16; // Steps for getting direct lighting
-static const int AMBIENT_STEP_COUNT = 4; // Steps for getting summed ambient density
 static const float FAR_PLANE = 6;
-
 
 //TODO: Not hardcode this
 static const float3 SUN_DIR = normalize(float3(0.4, -1, 0.4));
@@ -76,9 +78,9 @@ float SampleDensity(float3 _sample, float _profile)
 float GetSummedAmbientDensity(float3 _sample)
 {
     //TODO shaped: Bad step size that assumes 1 sphere
-    float stepSize = sqrt(volumes[0].squaredRad) / AMBIENT_STEP_COUNT;
+    float stepSize = sqrt(volumes[0].squaredRad) / renderSettings.ambientSampleCount;
     float density = 0;
-    for (int i = 0; i < AMBIENT_STEP_COUNT; ++i)
+    for (int i = 0; i < renderSettings.ambientSampleCount; ++i)
     {
         float3 sample = _sample + float3(0, 1, 0) * stepSize * i;
         for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
@@ -100,8 +102,8 @@ float GetDirectLightDensitySamples(float3 _sample)
 {
 
     float totalDensity = 0;
-    float stepSize = FAR_PLANE * 0.5 / DIRECT_STEP_COUNT;
-    for (int i = 0; i < AMBIENT_STEP_COUNT; ++i)
+    float stepSize = FAR_PLANE * 0.5 / renderSettings.directLightSampleCount;
+    for (int i = 0; i < renderSettings.directLightSampleCount; ++i)
     {
         float3 sample = _sample + -SUN_DIR * (i * stepSize);
         for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
@@ -157,13 +159,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
     if (screenDepth > 0)
         background = outputTexture[DTid.xy];
 
-    static float stepSize = farPlane / STEP_COUNT;
+    static float stepSize = farPlane / renderSettings.baseSampleCount;
 
     float3 light = 0;
     float transmittance = 1.0;
 
     //Ray marching steps
-    for (int i = 0; i < STEP_COUNT; ++i)
+    for (int i = 0; i < renderSettings.baseSampleCount; ++i)
     {
         float3 sample = rayOrigin + rayDir * (i * stepSize);
 

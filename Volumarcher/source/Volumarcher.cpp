@@ -10,22 +10,23 @@ namespace Volumarcher
 #include "CompiledShaders/VolumetricsCS.h"
 
 	VolumetricContext::VolumetricContext(Volume _volumes[VOLUME_AMOUNT], CameraSettings _cameraSettings,
-	                                     VolumetricSettings _settings) :
+	                                     Settings _settings) :
 		m_noise({256, 256, 256}),
 		m_cameraSettings(_cameraSettings),
-		m_volumetricSettings(_settings)
+		m_settings(_settings)
 	{
-		m_rs.Reset(5, 1);
+		m_rs.Reset(6, 1);
 		//Output texture
 		m_rs[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
 		//Scene depth
 		m_rs[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
 		//Constants
-		m_rs[2].InitAsConstants(0, sizeof(VolumetricConstants) / sizeof(uint32_t));
+		m_rs[2].InitAsConstants(0, sizeof(VolumetricCameraSettings) / sizeof(uint32_t));
+		m_rs[3].InitAsConstants(1, sizeof(VolumetricCameraSettings) / sizeof(uint32_t));
 		//Volume buffer
-		m_rs[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 		//Noise textures
-		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, VOLUME_AMOUNT);
+		m_rs[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, VOLUME_AMOUNT);
 
 		//Linear wrap sampler
 		D3D12_SAMPLER_DESC noiseSamplerDesc{
@@ -65,13 +66,21 @@ namespace Volumarcher
 		auto screenY = _outputBuffer.GetHeight();
 
 		glm::vec3 camDir = _camRot * glm::vec3(0, 0, 1);
-		VolumetricConstants constants{_camPos, screenX, camDir, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar};
-		computeContext.SetConstantArray(2, sizeof(VolumetricConstants) / sizeof(uint32_t), &constants);
+		VolumetricCameraSettings cameraSettings{
+			_camPos, screenX, camDir, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar, m_cameraSettings.vFov
+		};
+		VolumetricSettings baseSettings{
+			m_settings.baseSampleCount, m_settings.lightingSampleCount, m_settings.ambientSampleCount
+		};
+
+
+		computeContext.SetConstantArray(2, sizeof(VolumetricCameraSettings) / sizeof(uint32_t), &cameraSettings);
+		computeContext.SetConstantArray(3, sizeof(VolumetricSettings) / sizeof(uint32_t), &baseSettings);
 
 		//Bind volumes
-		computeContext.SetDynamicDescriptor(3, 0, m_volumeBuffer.GetSRV());
+		computeContext.SetDynamicDescriptor(4, 0, m_volumeBuffer.GetSRV());
 		//  Noise textures
-		computeContext.SetDynamicDescriptor(4, 0, m_noise.GetBillowNoise().GetSRV());
+		computeContext.SetDynamicDescriptor(5, 0, m_noise.GetBillowNoise().GetSRV());
 
 		//End call
 		computeContext.Dispatch(ceil(screenX / 32.f), ceil(screenY / 32.f), 1);

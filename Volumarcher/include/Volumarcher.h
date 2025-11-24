@@ -23,8 +23,11 @@ namespace Volumarcher
 		float vFov; //TODO: Use
 	};
 
-	struct VolumetricSettings
+	struct Settings
 	{
+		int baseSampleCount = 128;
+		int lightingSampleCount = 16;
+		int ambientSampleCount = 5;
 	};
 
 	class VolumetricContext
@@ -33,7 +36,7 @@ namespace Volumarcher
 		VolumetricContext() = delete;
 
 		explicit VolumetricContext(Volume _volumes[VOLUME_AMOUNT], CameraSettings _cameraSettings,
-		                           VolumetricSettings _settings = {});
+		                           Settings _settings = {});
 
 		void SetVolumes(Volume _volumes[VOLUME_AMOUNT]);
 
@@ -49,6 +52,6 @@ namespace Volumarcher
 		RootSignature m_rs;
 		StructuredBuffer m_volumeBuffer;
 		CameraSettings m_cameraSettings;
-		VolumetricSettings m_volumetricSettings;
+		Settings m_settings;
 	};
 }

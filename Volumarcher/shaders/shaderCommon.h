@@ -6,7 +6,7 @@ using uint = uint32_t;
 #else
 #endif
 
-struct VolumetricConstants
+struct VolumetricCameraSettings
 {
 	float3 camPos;
 	uint screenResX;
@@ -14,8 +14,16 @@ struct VolumetricConstants
 	uint screenResY;
 	float zNear;
 	float zFar;
+	float vFov;
 };
- 
+
+struct VolumetricSettings
+{
+	int baseSampleCount;
+	int directLightSampleCount;
+	int ambientSampleCount;
+};
+
 static const uint VOLUME_AMOUNT = 1;
 
 struct Volume
