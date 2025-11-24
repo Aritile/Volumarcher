@@ -21,6 +21,8 @@ using namespace Graphics;
 enum class Test
 {
 	BaseSampleCountSingle,
+	CloudCoverage,
+	Resolution,
 	None
 };
 
@@ -28,7 +30,11 @@ static Test g_currentTest;
 
 static constexpr uint MAX_FRAMES_PER_TEST_PHASE = 300;
 
-static constexpr uint SampleCountTestSamples[10]
+static uint base_samples = 128;
+static uint direct_samples = 16;
+static uint ambient_samples = 4;
+
+static constexpr uint sampleCountTestSamples[10]
 {
 	4,
 	8,
@@ -40,6 +46,32 @@ static constexpr uint SampleCountTestSamples[10]
 	512,
 	1024,
 };
+
+static constexpr float coverageCloudDistance[9]
+{
+	0.5f,
+	1.f,
+	2.f,
+	4.f,
+	8.f,
+	15.f,
+	20.f,
+	30.f,
+	50.f,
+};
+
+static constexpr glm::ivec2 resolutions[8]
+{
+	{320, 180},
+	glm::ivec2(320, 180) * 2,
+	glm::ivec2(320, 180) * 3,
+	glm::ivec2(320, 180) * 4, // 720p
+	glm::ivec2(320, 180) * 5,
+	glm::ivec2(320, 180) * 6, // 1080p
+	glm::ivec2(320, 180) * 8,
+	glm::ivec2(320, 180) * 12, // 4k
+};
+
 
 
 class PerformanceTestApplication : public GameCore::IGameApp
@@ -59,6 +91,7 @@ public:
 
 	void RenderRasterizerPass();
 
+	void StartTest();
 
 	void RenderScene(void) override;
 
@@ -210,7 +243,6 @@ void PerformanceTestApplication::Startup(void)
 {
 	GameCore::g_mouseLocked = false;
 
-
 	Utility::Printf("Starting Volumarcher Performance tester\n");
 
 	InitRasterizor();
@@ -228,20 +260,7 @@ void PerformanceTestApplication::Startup(void)
 
 	Utility::Printf("VolumetricContext Startup Time: %fs\n", startupTimer.GetTime());
 
-
-	switch (g_currentTest)
-	{
-	case Test::BaseSampleCountSingle:
-		testPhase = 0;
-			framesInTest = 0;
-		std::wstring testName = L"BaseSampleCountTest, Samples: " + std::to_wstring(
-				static_cast<int>(SampleCountTestSamples[testPhase]));
-		Utility::Printf("Starting test: %ls\n", testName);
-		pixTestTimer = new ScopedTimer(testName);
-		cpuTestTimer.Reset();
-		cpuTestTimer.Start();
-		m_volumetricContext->SetSettings({static_cast<int>(SampleCountTestSamples[testPhase]), 16, 4});
-	}
+	StartTest();
 }
 
 
@@ -253,12 +272,33 @@ void PerformanceTestApplication::Cleanup(void)
 void PerformanceTestApplication::Update(const float _deltaTime)
 {
 	ScopedTimer _prof(L"Update State");
+
+	if (GameInput::IsFirstPressed(GameInput::kKey_1))
+	{
+		g_currentTest = Test::BaseSampleCountSingle;
+		StartTest();
+	}
+	else if (GameInput::IsFirstPressed(GameInput::kKey_2))
+	{
+		g_currentTest = Test::CloudCoverage;
+		StartTest();
+	}
+	else if (GameInput::IsFirstPressed(GameInput::kKey_3))
+	{
+		g_currentTest = Test::Resolution;
+		StartTest();
+	}
+	else
+	{
+	}
+
 	framesInTest++;
 
 	switch (g_currentTest)
 	{
 	case Test::BaseSampleCountSingle:
-		if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
+		{
+			if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
 			{
 				delete pixTestTimer;
 				cpuTestTimer.Stop();
@@ -268,7 +308,7 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 
 				testPhase++;
 				framesInTest = 0;
-				if (testPhase >= _countof(SampleCountTestSamples))
+				if (testPhase >= _countof(sampleCountTestSamples))
 				{
 					g_currentTest = Test::None;
 					testPhase = 0;
@@ -276,15 +316,80 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 					return;
 				}
 				std::wstring testName = L"BaseSampleCountTest, Samples: " + std::to_wstring(
-					static_cast<int>(SampleCountTestSamples[testPhase]));
+					static_cast<int>(sampleCountTestSamples[testPhase]));
 				Utility::Printf("Starting test: %ls\n", testName.c_str());
 				pixTestTimer = new ScopedTimer(testName);
-				m_volumetricContext->SetSettings({static_cast<int>(SampleCountTestSamples[testPhase]), 16, 4});
+				m_volumetricContext->SetSettings({
+					static_cast<int>(sampleCountTestSamples[testPhase]), static_cast<int>(direct_samples),
+					static_cast<int>(ambient_samples)
+				});
 
 				cpuTestTimer.Reset();
 				cpuTestTimer.Start();
 			}
-		break;
+			break;
+		}
+	case Test::CloudCoverage:
+		{
+			if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
+			{
+				delete pixTestTimer;
+				cpuTestTimer.Stop();
+				float hz = static_cast<float>(1.0 / (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE)));
+				Utility::Printf("Test phase ran for: %fs | %fhz \n", cpuTestTimer.GetTime(), hz);
+
+				testPhase++;
+				framesInTest = 0;
+				if (testPhase >= _countof(coverageCloudDistance))
+				{
+					g_currentTest = Test::None;
+					testPhase = 0;
+					framesInTest = 0;
+					return;
+				}
+				std::wstring testName = L"CloudCoverage Test, Distance to cloud: " + std::to_wstring(
+					static_cast<int>(coverageCloudDistance[testPhase] - 1.f)); // 1.f is radius of cloud
+				Utility::Printf("Starting test: %ls\n", testName.c_str());
+				pixTestTimer = new ScopedTimer(testName);
+				m_camPos = {0, 0, -coverageCloudDistance[testPhase]};
+
+				cpuTestTimer.Reset();
+				cpuTestTimer.Start();
+			}
+			break;
+		}
+	case Test::Resolution:
+		{
+			if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
+			{
+				delete pixTestTimer;
+				cpuTestTimer.Stop();
+				float hz = static_cast<float>(1.0 / (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE)));
+				Utility::Printf("Test phase ran for: %fs | %fhz \n", cpuTestTimer.GetTime(), hz);
+
+				testPhase++;
+				framesInTest = 0;
+				if (testPhase >= _countof(resolutions))
+				{
+					g_currentTest = Test::None;
+					testPhase = 0;
+					framesInTest = 0;
+					return;
+				}
+				std::wstring testName = L"Resolution test, res: " + std::to_wstring(
+					static_cast<int>(resolutions[testPhase].x)) + L"x" + std::to_wstring(
+					static_cast<int>(resolutions[testPhase].y));
+				Utility::Printf("Starting test: %ls\n", testName.c_str());
+				pixTestTimer = new ScopedTimer(testName);
+				Display::Resize(resolutions[testPhase].x, resolutions[testPhase].y);
+
+				cpuTestTimer.Reset();
+				cpuTestTimer.Start();
+			}
+			break;
+		}
 	}
 
 
@@ -357,12 +462,80 @@ void PerformanceTestApplication::RenderRasterizerPass()
 	graphicsContext.Finish();
 }
 
+void PerformanceTestApplication::StartTest()
+{
+	m_volumetricContext->SetSettings({
+		static_cast<int>(base_samples), static_cast<int>(direct_samples), static_cast<int>(ambient_samples)
+	});
+	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 3.5f), 4.f, 5.f}};
+	m_volumetricContext->SetVolumes(volumes);
+	m_camPos = {0.f, 0.f, 0.f};
+	Display::Resize(1920, 1080);
+
+
+	switch (g_currentTest)
+	{
+	case Test::BaseSampleCountSingle:
+		{
+			testPhase = 0;
+			framesInTest = 0;
+			std::wstring testName = L"BaseSampleCountTest, Samples: " + std::to_wstring(
+				static_cast<int>(sampleCountTestSamples[testPhase]));
+			Utility::Printf("Starting test: %ls\n", testName);
+			pixTestTimer = new ScopedTimer(testName);
+			cpuTestTimer.Reset();
+			m_volumetricContext->SetSettings({
+				static_cast<int>(sampleCountTestSamples[testPhase]), static_cast<int>(direct_samples),
+				static_cast<int>(ambient_samples)
+			});
+			cpuTestTimer.Start();
+			break;
+		}
+	case Test::CloudCoverage:
+		{
+			testPhase = 0;
+			framesInTest = 0;
+			Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 0), 1.f, 10.f}};
+			m_volumetricContext->SetVolumes(volumes);
+			std::wstring testName = L"CloudCoverage, Cloud distance: " + std::to_wstring(
+				static_cast<int>(coverageCloudDistance[testPhase]));
+			Utility::Printf("Starting test: %ls\n", testName);
+			pixTestTimer = new ScopedTimer(testName);
+			cpuTestTimer.Reset();
+			m_volumetricContext->SetSettings({
+				static_cast<int>(base_samples), static_cast<int>(direct_samples), static_cast<int>(ambient_samples)
+			});
+			cpuTestTimer.Start();
+			break;
+		}
+	case Test::Resolution:
+		{
+			abort(); // TODO: implement this
+			testPhase = 0;
+			framesInTest = 0;
+			std::wstring testName = L"Resolution test, res: " + std::to_wstring(
+				static_cast<int>(resolutions[testPhase].x)) + L"x" + std::to_wstring(
+				static_cast<int>(resolutions[testPhase].y));
+			Utility::Printf("Starting test: %ls\n", testName);
+			pixTestTimer = new ScopedTimer(testName);
+			cpuTestTimer.Reset();
+			Display::Resize(resolutions[testPhase].x, resolutions[testPhase].y);
+
+			cpuTestTimer.Start();
+
+			break;
+		}
+	}
+}
+
 
 void PerformanceTestApplication::RenderScene(void)
 {
 	switch (g_currentTest)
 	{
 	case Test::BaseSampleCountSingle:
+	case Test::CloudCoverage:
+	case Test::Resolution:
 		m_volumetricContext->Render(g_SceneColorBuffer,
 		                            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
 		                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, g_SceneDepthBuffer,

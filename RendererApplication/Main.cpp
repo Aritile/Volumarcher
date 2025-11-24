@@ -270,7 +270,6 @@ void RendererApplication::RenderRasterizerPass()
 
 	graphicsContext.DrawIndexed(_countof(cubeIndices));
 
-
 	graphicsContext.Finish();
 }
 
