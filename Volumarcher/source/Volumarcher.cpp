@@ -15,14 +15,15 @@ namespace Volumarcher
 		m_cameraSettings(_cameraSettings),
 		m_settings(_settings)
 	{
-		m_rs.Reset(7, 2);
+		m_rs.Reset(8, 2);
 		//Output texture
 		m_rs[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
 		//Scene depth
 		m_rs[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
 		//Constants
-		m_rs[2].InitAsConstants(0, sizeof(VolumetricCamera) / sizeof(uint32_t));
+		m_rs[2].InitAsConstants(0, sizeof(VolumetricDynamics) / sizeof(uint32_t));
 		m_rs[3].InitAsConstants(1, sizeof(VolumetricSettings) / sizeof(uint32_t));
+		m_rs[7].InitAsConstants(2, sizeof(VolumetricWorld) / sizeof(uint32_t));
 		//Volume buffer
 		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 		//Noise textures
@@ -67,6 +68,13 @@ namespace Volumarcher
 	//	m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
 	//}
 
+	void VolumetricContext::Update(const float _deltaTime)
+	{
+		m_time += _deltaTime;
+	}
+
+
+	
 	void VolumetricContext::Render(ColorBuffer _outputBuffer, D3D12_RESOURCE_STATES _outputBufferState,
 	                               DepthBuffer _inputDepth, glm::vec3 _camPos,
 	                               glm::quat _camRot)
@@ -83,8 +91,8 @@ namespace Volumarcher
 		auto screenY = _outputBuffer.GetHeight();
 
 		glm::vec3 camDir = _camRot * glm::vec3(0, 0, 1);
-		VolumetricCamera cameraSettings{
-			_camPos, 0.f, camDir
+		VolumetricDynamics cameraSettings{
+			_camPos, m_time, camDir
 		};
 		VolumetricSettings baseSettings{
 			glm::vec3(0, 0, 0),
@@ -92,12 +100,15 @@ namespace Volumarcher
 			screenX, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar,
 			tan(glm::radians(m_cameraSettings.vFov) / 2.f)
 		};
+		VolumetricWorld worldSettings{
+			glm::vec3(1, 0, 0.5) * 0.1f
+		};
 
-
-		computeContext.SetConstantArray(2, sizeof(VolumetricCamera) / sizeof(uint32_t), &cameraSettings);
+		computeContext.SetConstantArray(2, sizeof(VolumetricDynamics) / sizeof(uint32_t), &cameraSettings);
 
 
 		computeContext.SetConstantArray(3, sizeof(VolumetricSettings) / sizeof(uint32_t), &baseSettings);
+		computeContext.SetConstantArray(7, sizeof(VolumetricWorld) / sizeof(uint32_t), &worldSettings);
 
 		//Bind volumes
 		computeContext.SetDynamicDescriptor(4, 0, m_volumeBuffer.GetSRV());

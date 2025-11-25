@@ -6,10 +6,10 @@ using uint = uint32_t;
 #else
 #endif
 
-struct VolumetricCamera
+struct VolumetricDynamics
 {
 	float3 camPos;
-	float pad0;
+	float time;
 	float3 camDir;
 };
 
@@ -25,6 +25,11 @@ struct VolumetricSettings
 	float zNear;
 	float zFar;
 	float vFovAdjust; // tan(Fov(rad) / 2)
+};
+
+struct VolumetricWorld
+{
+	float3 wind; // Direction/speed the noise scrolls
 };
 
 static const uint VOLUME_AMOUNT = 1;

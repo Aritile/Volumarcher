@@ -226,6 +226,8 @@ void RendererApplication::Update(const float _deltaTime)
 {
 	ScopedTimer _prof(L"Update State");
 
+	m_volumetricContext->Update(_deltaTime);
+
 	if (GameInput::IsFirstPressed(GameInput::DigitalInput::kKey_tab))
 	{
 		GameCore::g_mouseLocked = !GameCore::g_mouseLocked;

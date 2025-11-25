@@ -7,7 +7,7 @@ Texture2D<float> sceneDepth : register(t0);
 
 cbuffer RootConstants : register(b0)
 {
-    VolumetricCamera camera;
+    VolumetricDynamics constants;
 };
 
 cbuffer RenderSettings : register(b1)
@@ -15,6 +15,9 @@ cbuffer RenderSettings : register(b1)
     VolumetricSettings renderConstants;
 };
 
+cbuffer WorldSettings : register(b2) {
+    VolumetricWorld worldConstants;
+}
 
 
 StructuredBuffer<Volume> volumes : register(t1);
@@ -71,9 +74,12 @@ float SampleProfile(float3 _sample)
 float SampleDensity(float3 _sample, float _profile)
 {
     float density = _profile;
-	//Magic numbers to make texture tiling less obvious
-    float3 noiseTexSample = (float3(_sample) + float3(14.34, 14.34, 14.34)) * 0.23;
-    float noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0));
+    float scale = 0.23;
+	float3 noiseTexSample = float3(_sample) * scale;
+    //Wind
+    noiseTexSample += worldConstants.wind * constants.time;
+
+	float noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0));
     density = saturate(Remap(density, noise
                , 1, 0, 1));
 
@@ -152,11 +158,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float rayX = (2 * screenUV.x - 1) * fovAdjust * aspect;
     float rayY = (1 - 2 * screenUV.y) * fovAdjust;
     //Get camera mat
-    float3 camRight = normalize(cross(camera.camDir, float3(0, 1, 0)));
-    float3 camUp = cross(camRight, camera.camDir);
-    float3x3 camMat = float3x3(camRight, camUp, camera.camDir);
+    float3 camRight = normalize(cross(constants.camDir, float3(0, 1, 0)));
+    float3 camUp = cross(camRight, constants.camDir);
+    float3x3 camMat = float3x3(camRight, camUp, constants.camDir);
 
-    float3 rayOrigin = camera.camPos;
+    float3 rayOrigin = constants.camPos;
     float3 rayDir = mul(normalize(float3(rayX, rayY, 1)), camMat);
 
     //Background (maybe temp or optional if scene already has skybox)

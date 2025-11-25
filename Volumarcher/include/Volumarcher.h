@@ -46,6 +46,8 @@ namespace Volumarcher
 		Settings GetSettings() const { return m_settings; }
 		void SetSettings(const Settings _volumetricSettings) { m_settings = _volumetricSettings; }
 
+		void Update(float _deltaTime);
+
 		void Render(ColorBuffer _outputBuffer, D3D12_RESOURCE_STATES _outputBufferState, DepthBuffer _inputDepth,
 		            glm::vec3 _camPos = glm::vec3{0.f},
 		            glm::quat _camRot = glm::identity<glm::quat>());
@@ -61,5 +63,6 @@ namespace Volumarcher
 		StructuredBuffer m_volumeBuffer;
 		CameraSettings m_cameraSettings;
 		Settings m_settings;
+		float m_time{0.f};
 	};
 }
