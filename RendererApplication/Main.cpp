@@ -189,7 +189,7 @@ void RendererApplication::Startup(void)
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, 70.f};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
 
-	static constexpr int gridSize = 16;
+	static constexpr int gridSize = 64;
 	std::vector<float> grid(gridSize * gridSize * gridSize, 1.f);
 	for (int x = 0; x < gridSize; ++x)
 	{
@@ -197,8 +197,8 @@ void RendererApplication::Startup(void)
 		{
 			for (int z = 0; z < gridSize; ++z)
 			{
-				glm::vec3 pos = glm::vec3(x, y, z) - glm::vec3(0.5 * gridSize);
-				grid[x * gridSize * gridSize + y * gridSize + z] = std::max(8 - glm::length(pos), 0.f);
+				glm::vec3 pos = glm::vec3(x, y, z) + 0.5f - glm::vec3(0.5 * gridSize);
+				grid[x * gridSize * gridSize + y * gridSize + z] = std::max(28 - glm::length(pos), 0.f);
 			}
 		}
 	}

@@ -63,7 +63,10 @@ float HenyeyGreensteinPhase(float inCosAngle, float inG)
 //Sample dimensional profile
 float SampleProfile(float3 _sample)
 {
-    return voxelVolume.SampleLevel(profileSampler, (_sample - renderSettings.origin) * renderSettings.worldSize, 0);
+    float3 sample = (_sample - renderSettings.origin) * renderSettings.worldSize;
+    if (any(sample > 1.0) || any(sample < 0.0))
+        return 0.0;
+    return voxelVolume.SampleLevel(profileSampler,sample , 0);
 }
 
 float SampleDensity(float3 _sample, float _profile)
@@ -171,7 +174,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
     for (int i = 0; i < renderSettings.baseSampleCount; ++i)
     {
         float3 sample = rayOrigin + rayDir * (i * stepSize);
-
         float sampleDensity = 0;
         float3 sampleLight = 0;
 
