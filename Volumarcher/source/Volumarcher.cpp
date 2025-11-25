@@ -21,7 +21,7 @@ namespace Volumarcher
 		//Scene depth
 		m_rs[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
 		//Constants
-		m_rs[2].InitAsConstants(0, sizeof(VolumetricCameraSettings) / sizeof(uint32_t));
+		m_rs[2].InitAsConstants(0, sizeof(VolumetricCamera) / sizeof(uint32_t));
 		m_rs[3].InitAsConstants(1, sizeof(VolumetricSettings) / sizeof(uint32_t));
 		//Volume buffer
 		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
@@ -83,17 +83,20 @@ namespace Volumarcher
 		auto screenY = _outputBuffer.GetHeight();
 
 		glm::vec3 camDir = _camRot * glm::vec3(0, 0, 1);
-		VolumetricCameraSettings cameraSettings{
-			_camPos, screenX, camDir, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar,
-			tan(glm::radians(m_cameraSettings.vFov) / 2.f)
+		VolumetricCamera cameraSettings{
+			_camPos, 0.f, camDir
 		};
 		VolumetricSettings baseSettings{
 			glm::vec3(0, 0, 0),
-			m_settings.baseSampleCount, glm::vec3(0.5f), m_settings.lightingSampleCount, m_settings.ambientSampleCount
+			m_settings.baseSampleCount, glm::vec3(0.5f), m_settings.lightingSampleCount, m_settings.ambientSampleCount,
+			screenX, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar,
+			tan(glm::radians(m_cameraSettings.vFov) / 2.f)
 		};
 
 
-		computeContext.SetConstantArray(2, sizeof(VolumetricCameraSettings) / sizeof(uint32_t), &cameraSettings);
+		computeContext.SetConstantArray(2, sizeof(VolumetricCamera) / sizeof(uint32_t), &cameraSettings);
+
+
 		computeContext.SetConstantArray(3, sizeof(VolumetricSettings) / sizeof(uint32_t), &baseSettings);
 
 		//Bind volumes

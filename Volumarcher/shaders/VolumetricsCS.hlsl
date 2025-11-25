@@ -7,12 +7,12 @@ Texture2D<float> sceneDepth : register(t0);
 
 cbuffer RootConstants : register(b0)
 {
-    VolumetricCameraSettings cameraConstants;
+    VolumetricCamera camera;
 };
 
 cbuffer RenderSettings : register(b1)
 {
-    VolumetricSettings renderSettings;
+    VolumetricSettings renderConstants;
 };
 
 
@@ -62,7 +62,7 @@ float HenyeyGreensteinPhase(float inCosAngle, float inG)
 //Sample dimensional profile
 float SampleProfile(float3 _sample)
 {
-    float3 sample = (_sample - renderSettings.origin) * renderSettings.worldSize;
+    float3 sample = (_sample - renderConstants.origin) * renderConstants.worldSize;
     if (any(sample > 1.0) || any(sample < 0.0))
         return 0.0;
     return voxelVolume.SampleLevel(profileSampler,sample , 0);
@@ -83,9 +83,9 @@ float SampleDensity(float3 _sample, float _profile)
 float GetSummedAmbientDensity(float3 _sample)
 {
     //TODO shaped: Bad step size that assumes 1 sphere
-    float stepSize = sqrt(volumes[0].squaredRad) / renderSettings.ambientSampleCount;
+    float stepSize = sqrt(volumes[0].squaredRad) / renderConstants.ambientSampleCount;
     float density = 0;
-    for (int i = 0; i < renderSettings.ambientSampleCount; ++i)
+    for (int i = 0; i < renderConstants.ambientSampleCount; ++i)
     {
         float3 sample = _sample + float3(0, 1, 0) * stepSize * i;
         for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
@@ -107,8 +107,8 @@ float GetDirectLightDensitySamples(float3 _sample)
 {
 
     float totalDensity = 0;
-    float stepSize = FAR_PLANE * 0.5 / renderSettings.directLightSampleCount;
-    for (int i = 0; i < renderSettings.directLightSampleCount; ++i)
+    float stepSize = FAR_PLANE * 0.5 / renderConstants.directLightSampleCount;
+    for (int i = 0; i < renderConstants.directLightSampleCount; ++i)
     {
         float3 sample = _sample + -SUN_DIR * (i * stepSize);
         for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
@@ -135,28 +135,28 @@ float InScatteringApprox(float _baseDimensionalProfile, float _sun_dot, float _s
 [numthreads(32, 32, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    if (DTid.x > cameraConstants.screenResX || DTid.y > cameraConstants.screenResY)
+    if (DTid.x > renderConstants.screenResX || DTid.y > renderConstants.screenResY)
         return;
 
-    float2 screenUV = (float2(DTid.xy) + 0.5) / float2(cameraConstants.screenResX, cameraConstants.screenResY);
+    float2 screenUV = (float2(DTid.xy) + 0.5) / float2(renderConstants.screenResX, renderConstants.screenResY);
 
     //Get depth
     float screenDepth = sceneDepth.SampleLevel(noiseSampler, screenUV, 0);
-    float linearDepth = cameraConstants.zNear * cameraConstants.zFar / (cameraConstants.zFar + (1 - screenDepth) * (cameraConstants.zNear - cameraConstants.zFar));
+    float linearDepth = renderConstants.zNear * renderConstants.zFar / (renderConstants.zFar + (1 - screenDepth) * (renderConstants.zNear - renderConstants.zFar));
     float farPlane = min(linearDepth, FAR_PLANE);
 	
 	//Get screen ray
-    float aspect = float(cameraConstants.screenResX) / float(cameraConstants.screenResY);
+    float aspect = float(renderConstants.screenResX) / float(renderConstants.screenResY);
 
-    float fovAdjust = cameraConstants.vFovAdjust;
+    float fovAdjust = renderConstants.vFovAdjust;
     float rayX = (2 * screenUV.x - 1) * fovAdjust * aspect;
     float rayY = (1 - 2 * screenUV.y) * fovAdjust;
     //Get camera mat
-    float3 camRight = normalize(cross(cameraConstants.camDir, float3(0, 1, 0)));
-    float3 camUp = cross(camRight, cameraConstants.camDir);
-    float3x3 camMat = float3x3(camRight, camUp, cameraConstants.camDir);
+    float3 camRight = normalize(cross(camera.camDir, float3(0, 1, 0)));
+    float3 camUp = cross(camRight, camera.camDir);
+    float3x3 camMat = float3x3(camRight, camUp, camera.camDir);
 
-    float3 rayOrigin = cameraConstants.camPos;
+    float3 rayOrigin = camera.camPos;
     float3 rayDir = mul(normalize(float3(rayX, rayY, 1)), camMat);
 
     //Background (maybe temp or optional if scene already has skybox)
@@ -164,13 +164,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
     if (screenDepth > 0)
         background = outputTexture[DTid.xy];
 
-    static float stepSize = farPlane / renderSettings.baseSampleCount;
+    static float stepSize = farPlane / renderConstants.baseSampleCount;
 
     float3 light = 0;
     float transmittance = 1.0;
 
     //Ray marching steps
-    for (int i = 0; i < renderSettings.baseSampleCount; ++i)
+    for (int i = 0; i < renderConstants.baseSampleCount; ++i)
     {
         float3 sample = rayOrigin + rayDir * (i * stepSize);
         float sampleDensity = 0;

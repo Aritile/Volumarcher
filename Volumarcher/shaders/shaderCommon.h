@@ -6,15 +6,11 @@ using uint = uint32_t;
 #else
 #endif
 
-struct VolumetricCameraSettings
+struct VolumetricCamera
 {
 	float3 camPos;
-	uint screenResX;
+	float pad0;
 	float3 camDir;
-	uint screenResY;
-	float zNear;
-	float zFar;
-	float vFovAdjust; // tan(Fov(rad) / 2)
 };
 
 struct VolumetricSettings
@@ -24,6 +20,11 @@ struct VolumetricSettings
 	float3 worldSize;
 	int directLightSampleCount;
 	int ambientSampleCount;
+	uint screenResX;
+	uint screenResY;
+	float zNear;
+	float zFar;
+	float vFovAdjust; // tan(Fov(rad) / 2)
 };
 
 static const uint VOLUME_AMOUNT = 1;
