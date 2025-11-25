@@ -45,7 +45,7 @@ private:
 	float m_camPitch{0.f};
 	const float m_cameraSpeed{2.f};
 	const float m_cameraRotSpeed{0.7f};
-
+	const float m_vFov{70.f};
 
 	//Cube/Rasterizor stuff
 	StructuredBuffer vertexBuffer;
@@ -186,7 +186,7 @@ void RendererApplication::Startup(void)
 	CpuTimer startupTimer;
 	startupTimer.Start();
 	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 15.f}};
-	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, 70.f};
+	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, m_vFov};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
 
 	static constexpr int gridSize = 64;
@@ -284,7 +284,7 @@ void RendererApplication::RenderRasterizerPass()
 
 	glm::vec3 camDir = m_camRot * glm::vec3(0, 0, 1);
 	glm::mat4 view = glm::lookAtRH(m_camPos, m_camPos + camDir, glm::vec3(0, 1, 0));
-	static const glm::mat4 projection = glm::perspectiveRH_ZO(glm::radians(70.f), (16.f / 9.f), 50.f, 0.01f);
+	static const glm::mat4 projection = glm::perspectiveRH_ZO(glm::radians(m_vFov), (16.f / 9.f), 50.f, 0.01f);
 
 	MatrixBuffer constants{projection * view * glm::translate(glm::identity<glm::mat4>(), glm::vec3(0, 0, -2))};
 	graphicsContext.SetConstantArray(0, sizeof(MatrixBuffer) / sizeof(uint32_t), &constants);

@@ -7,7 +7,7 @@ Texture2D<float> sceneDepth : register(t0);
 
 cbuffer RootConstants : register(b0)
 {
-    VolumetricCameraSettings constants;
+    VolumetricCameraSettings cameraConstants;
 };
 
 cbuffer RenderSettings : register(b1)
@@ -43,7 +43,6 @@ static const float ECCENTRICITY = 0.2;
 
 static const float DEG_TO_RAD = 0.01745;
 
-static const float vFov = 70 * DEG_TO_RAD;
 
 //Remap from https://stackoverflow.com/a/3451607
 float Remap(float value, float low1, float high1, float low2, float high2)
@@ -136,28 +135,28 @@ float InScatteringApprox(float _baseDimensionalProfile, float _sun_dot, float _s
 [numthreads(32, 32, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    if (DTid.x > constants.screenResX || DTid.y > constants.screenResY)
+    if (DTid.x > cameraConstants.screenResX || DTid.y > cameraConstants.screenResY)
         return;
 
-    float2 screenUV = (float2(DTid.xy) + 0.5) / float2(constants.screenResX, constants.screenResY);
+    float2 screenUV = (float2(DTid.xy) + 0.5) / float2(cameraConstants.screenResX, cameraConstants.screenResY);
 
     //Get depth
     float screenDepth = sceneDepth.SampleLevel(noiseSampler, screenUV, 0);
-    float linearDepth = constants.zNear * constants.zFar / (constants.zFar + (1 - screenDepth) * (constants.zNear - constants.zFar));
+    float linearDepth = cameraConstants.zNear * cameraConstants.zFar / (cameraConstants.zFar + (1 - screenDepth) * (cameraConstants.zNear - cameraConstants.zFar));
     float farPlane = min(linearDepth, FAR_PLANE);
 	
 	//Get screen ray
-    float aspect = float(constants.screenResX) / float(constants.screenResY);
+    float aspect = float(cameraConstants.screenResX) / float(cameraConstants.screenResY);
 
-    float fovAdjust = tan(vFov / 2);
+    float fovAdjust = cameraConstants.vFovAdjust;
     float rayX = (2 * screenUV.x - 1) * fovAdjust * aspect;
     float rayY = (1 - 2 * screenUV.y) * fovAdjust;
     //Get camera mat
-    float3 camRight = normalize(cross(constants.camDir, float3(0, 1, 0)));
-    float3 camUp = cross(camRight, constants.camDir);
-    float3x3 camMat = float3x3(camRight, camUp, constants.camDir);
+    float3 camRight = normalize(cross(cameraConstants.camDir, float3(0, 1, 0)));
+    float3 camUp = cross(camRight, cameraConstants.camDir);
+    float3x3 camMat = float3x3(camRight, camUp, cameraConstants.camDir);
 
-    float3 rayOrigin = constants.camPos;
+    float3 rayOrigin = cameraConstants.camPos;
     float3 rayDir = mul(normalize(float3(rayX, rayY, 1)), camMat);
 
     //Background (maybe temp or optional if scene already has skybox)

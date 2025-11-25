@@ -22,7 +22,7 @@ namespace Volumarcher
 		m_rs[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
 		//Constants
 		m_rs[2].InitAsConstants(0, sizeof(VolumetricCameraSettings) / sizeof(uint32_t));
-		m_rs[3].InitAsConstants(1, sizeof(VolumetricCameraSettings) / sizeof(uint32_t));
+		m_rs[3].InitAsConstants(1, sizeof(VolumetricSettings) / sizeof(uint32_t));
 		//Volume buffer
 		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 		//Noise textures
@@ -84,7 +84,8 @@ namespace Volumarcher
 
 		glm::vec3 camDir = _camRot * glm::vec3(0, 0, 1);
 		VolumetricCameraSettings cameraSettings{
-			_camPos, screenX, camDir, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar, m_cameraSettings.vFov
+			_camPos, screenX, camDir, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar,
+			tan(glm::radians(m_cameraSettings.vFov) / 2.f)
 		};
 		VolumetricSettings baseSettings{
 			glm::vec3(0, 0, 0),

@@ -14,7 +14,7 @@ struct VolumetricCameraSettings
 	uint screenResY;
 	float zNear;
 	float zFar;
-	float vFov;
+	float vFovAdjust; // tan(Fov(rad) / 2)
 };
 
 struct VolumetricSettings
