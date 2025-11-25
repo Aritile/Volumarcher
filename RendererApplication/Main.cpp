@@ -185,7 +185,7 @@ void RendererApplication::Startup(void)
 	Utility::Printf("Creating Volumetric Context\n");
 	CpuTimer startupTimer;
 	startupTimer.Start();
-	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 10.f}};
+	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 15.f}};
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, 70.f};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
 
@@ -198,7 +198,9 @@ void RendererApplication::Startup(void)
 			for (int z = 0; z < gridSize; ++z)
 			{
 				glm::vec3 pos = glm::vec3(x, y, z) + 0.5f - glm::vec3(0.5 * gridSize);
-				grid[x * gridSize * gridSize + y * gridSize + z] = std::max(28 - glm::length(pos), 0.f);
+				grid[x * gridSize * gridSize + y * gridSize + z] = std::max(
+					(1 - (glm::length(pos) / (gridSize * 0.5f))) * 15
+					, 0.f);
 			}
 		}
 	}
@@ -284,7 +286,7 @@ void RendererApplication::RenderRasterizerPass()
 	glm::mat4 view = glm::lookAtRH(m_camPos, m_camPos + camDir, glm::vec3(0, 1, 0));
 	static const glm::mat4 projection = glm::perspectiveRH_ZO(glm::radians(70.f), (16.f / 9.f), 50.f, 0.01f);
 
-	MatrixBuffer constants{projection * view};
+	MatrixBuffer constants{projection * view * glm::translate(glm::identity<glm::mat4>(), glm::vec3(0, 0, -2))};
 	graphicsContext.SetConstantArray(0, sizeof(MatrixBuffer) / sizeof(uint32_t), &constants);
 
 	graphicsContext.DrawIndexed(_countof(cubeIndices));
