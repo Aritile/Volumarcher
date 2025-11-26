@@ -15,7 +15,8 @@ cbuffer RenderSettings : register(b1)
     VolumetricSettings renderConstants;
 };
 
-cbuffer WorldSettings : register(b2) {
+cbuffer WorldSettings : register(b2)
+{
     VolumetricWorld worldConstants;
 }
 
@@ -40,7 +41,9 @@ static const float3 BACKGROUND_COLOR_DOWN = float3(0.694, 0.596, 0.467) * 0.5;
 static const float3 AMBIENT_COLOR = float3(0.467, 0.529, 0.671);
 
 
-static const float ABSORPTION_SCATTERING = 1.0;
+static const float ABSORPTION = 0.5;
+static const float SCATTERING = 0.5;
+static const float ABSORPTION_SCATTERING = ABSORPTION + SCATTERING;
 static const float ECCENTRICITY = 0.2;
 
 
@@ -68,24 +71,25 @@ float SampleProfile(float3 _sample)
     float3 sample = (_sample - renderConstants.origin) * renderConstants.worldSize;
     if (any(sample > 1.0) || any(sample < 0.0))
         return 0.0;
-    return voxelVolume.SampleLevel(profileSampler,sample , 0);
+    return voxelVolume.SampleLevel(profileSampler, sample, 0);
 }
 
 float SampleDensity(float3 _sample, float _profile)
 {
     float density = _profile;
     float scale = 0.4;
-	float3 noiseTexSample = float3(_sample) * scale;
+    float3 noiseTexSample = float3(_sample) * scale;
     //Wind
     noiseTexSample += worldConstants.wind * constants.time;
 
-	float noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0).a);
+    float noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0).a);
     density = saturate(Remap(density, noise
                , 1, 0, 1));
 
     return density;
 }
 
+//TODO: This should be precomputed
 float GetSummedAmbientDensity(float3 _sample)
 {
     //TODO shaped: Bad step size that assumes 1 sphere
@@ -94,15 +98,8 @@ float GetSummedAmbientDensity(float3 _sample)
     for (int i = 0; i < renderConstants.ambientSampleCount; ++i)
     {
         float3 sample = _sample + float3(0, 1, 0) * stepSize * i;
-        for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
-        {
-            float3 sphereOffset = sample - volumes[volumeId].position;
-            float distToSphere2 = dot(sphereOffset, sphereOffset);
-            if (distToSphere2 < volumes[volumeId].squaredRad) // Hit sphere
-            {
-                density += SampleDensity(sample, SampleProfile(sample) * volumes[volumeId].baseDensity) * stepSize;
-            }
-        }
+
+        density += SampleDensity(sample, SampleProfile(sample)) * stepSize;
     }
     return density;
 }
@@ -113,27 +110,19 @@ float GetDirectLightDensitySamples(float3 _sample)
 {
 
     float totalDensity = 0;
-    float stepSize = FAR_PLANE * 0.5 / renderConstants.directLightSampleCount;
+    float stepSize = FAR_PLANE * 0.25 / renderConstants.directLightSampleCount;
     for (int i = 0; i < renderConstants.directLightSampleCount; ++i)
     {
         float3 sample = _sample + -SUN_DIR * (i * stepSize);
-        for (int volumeId = 0; volumeId < VOLUME_AMOUNT; ++volumeId)
-        {
-            float3 sphereOffset = sample - volumes[volumeId].position;
-            float distToSphere2 = dot(sphereOffset, sphereOffset);
-            if (distToSphere2 < volumes[volumeId].squaredRad) // Hit sphere
-            {
-                float profile = SampleProfile(sample);
-                totalDensity = SampleDensity(sample, profile) * stepSize;
-            }
-        }
+        float profile = SampleProfile(sample);
+        totalDensity += SampleDensity(sample, profile) * stepSize;
     }
     return totalDensity;
 }
 
 float InScatteringApprox(float _baseDimensionalProfile, float _sun_dot, float _sunDensitySamples)
 {
-    return exp(-_sunDensitySamples * Remap(_sun_dot, 0.0, 0.9, 0.25, Remap(_baseDimensionalProfile, 1.0, 0.0, 0.05, 0.25)));
+    return exp(-_sunDensitySamples * Remap(_sun_dot, 0.0, 0.9, 0.25, Remap(_baseDimensionalProfile, 25.0, 0.0, 0.05, 0.25)));
 }
 
 
@@ -175,6 +164,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float3 light = 0;
     float transmittance = 1.0;
 
+    static const float TRANSMITTANCE_CUTOFF = 0.05;
+
     //Ray marching steps
     for (int i = 0; i < renderConstants.baseSampleCount; ++i)
     {
@@ -182,12 +173,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
         float sampleDensity = 0;
         float3 sampleLight = 0;
 
-                //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
+        //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
         float profile = SampleProfile(sample);
 
     	//Density with high detail noise
         sampleDensity += SampleDensity(sample, profile);
-
+        if (sampleDensity == 0)
+            continue;
                 //Ambient approximation, gives popcorn effect
         sampleLight += saturate((1 - profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR * PI);
         float lightAngle = dot(rayDir, -SUN_DIR);
@@ -195,9 +187,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
         float lightVolume = InScatteringApprox(profile, lightAngle, inSunLightDensitySamples);
         sampleLight += lightVolume * SUN_LIGHT * HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
 
-        light += (sampleLight) * transmittance * sampleDensity * stepSize;
+        light += sampleLight * transmittance * sampleDensity * stepSize;
 
         transmittance *= exp(-stepSize * ABSORPTION_SCATTERING * sampleDensity);
+        if (transmittance < TRANSMITTANCE_CUTOFF)
+            break;
     }
     light += transmittance * background;
 

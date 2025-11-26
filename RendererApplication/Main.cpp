@@ -185,11 +185,11 @@ void RendererApplication::Startup(void)
 	Utility::Printf("Creating Volumetric Context\n");
 	CpuTimer startupTimer;
 	startupTimer.Start();
-	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 15.f}};
+	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 25.f}};
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, m_vFov};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
 
-	static constexpr int gridSize = 64;
+	static constexpr int gridSize = 32;
 	std::vector<float> grid(gridSize * gridSize * gridSize, 1.f);
 	for (int x = 0; x < gridSize; ++x)
 	{
@@ -199,13 +199,13 @@ void RendererApplication::Startup(void)
 			{
 				glm::vec3 pos = glm::vec3(x, y, z) + 0.5f - glm::vec3(0.5 * gridSize);
 				grid[x * gridSize * gridSize + y * gridSize + z] = std::max(
-					(1 - (glm::length(pos) / (gridSize * 0.5f))) * 15
+					(1 - (glm::length(pos) / (gridSize * 0.5f))) * 25
 					, 0.f);
 			}
 		}
 	}
 
-	m_volumetricContext->SetVolumeGrid(grid, {gridSize, gridSize, gridSize}, {0.4f, 1.f, 0.4f});
+	m_volumetricContext->SetVolumeGrid(grid, {gridSize, gridSize, gridSize}, {0.4f, 0.6f, 0.4f});
 
 	PostEffects::BloomEnable = false;
 	PostEffects::EnableHDR = false;
