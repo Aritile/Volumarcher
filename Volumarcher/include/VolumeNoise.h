@@ -7,6 +7,8 @@ class VolumeNoise
 public:
 	VolumeNoise() = default;
 
-	[[nodiscard]] virtual Texture GetBillowNoise() = 0;
+
+	//Get noise texture, different types in different channels
+	[[nodiscard]] virtual Texture GetNoise() = 0;
 
 };

@@ -13,7 +13,7 @@ class CloudNoise final : public VolumeNoise
 public:
 	explicit CloudNoise(glm::ivec3 _resolution);
 
-	[[nodiscard]] Texture GetBillowNoise() override { return m_billowNoiseTexture; }
+	[[nodiscard]] Texture GetNoise() override { return m_billowNoiseTexture; }
 private:
 	Texture m_billowNoiseTexture;
 

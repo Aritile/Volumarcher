@@ -7,11 +7,144 @@
 
 namespace Volumarcher
 {
+	static const std::vector<std::string> NOISE_TEXTURE{
+		"../assets/noise/NubisVoxelCloudNoise.001.tga",
+		"../assets/noise/NubisVoxelCloudNoise.002.tga",
+		"../assets/noise/NubisVoxelCloudNoise.003.tga",
+		"../assets/noise/NubisVoxelCloudNoise.004.tga",
+		"../assets/noise/NubisVoxelCloudNoise.005.tga",
+		"../assets/noise/NubisVoxelCloudNoise.006.tga",
+		"../assets/noise/NubisVoxelCloudNoise.007.tga",
+		"../assets/noise/NubisVoxelCloudNoise.008.tga",
+		"../assets/noise/NubisVoxelCloudNoise.009.tga",
+		"../assets/noise/NubisVoxelCloudNoise.010.tga",
+		"../assets/noise/NubisVoxelCloudNoise.011.tga",
+		"../assets/noise/NubisVoxelCloudNoise.012.tga",
+		"../assets/noise/NubisVoxelCloudNoise.013.tga",
+		"../assets/noise/NubisVoxelCloudNoise.014.tga",
+		"../assets/noise/NubisVoxelCloudNoise.015.tga",
+		"../assets/noise/NubisVoxelCloudNoise.016.tga",
+		"../assets/noise/NubisVoxelCloudNoise.017.tga",
+		"../assets/noise/NubisVoxelCloudNoise.018.tga",
+		"../assets/noise/NubisVoxelCloudNoise.019.tga",
+		"../assets/noise/NubisVoxelCloudNoise.020.tga",
+		"../assets/noise/NubisVoxelCloudNoise.021.tga",
+		"../assets/noise/NubisVoxelCloudNoise.022.tga",
+		"../assets/noise/NubisVoxelCloudNoise.023.tga",
+		"../assets/noise/NubisVoxelCloudNoise.024.tga",
+		"../assets/noise/NubisVoxelCloudNoise.025.tga",
+		"../assets/noise/NubisVoxelCloudNoise.026.tga",
+		"../assets/noise/NubisVoxelCloudNoise.027.tga",
+		"../assets/noise/NubisVoxelCloudNoise.028.tga",
+		"../assets/noise/NubisVoxelCloudNoise.029.tga",
+		"../assets/noise/NubisVoxelCloudNoise.030.tga",
+		"../assets/noise/NubisVoxelCloudNoise.031.tga",
+		"../assets/noise/NubisVoxelCloudNoise.032.tga",
+		"../assets/noise/NubisVoxelCloudNoise.033.tga",
+		"../assets/noise/NubisVoxelCloudNoise.034.tga",
+		"../assets/noise/NubisVoxelCloudNoise.035.tga",
+		"../assets/noise/NubisVoxelCloudNoise.036.tga",
+		"../assets/noise/NubisVoxelCloudNoise.037.tga",
+		"../assets/noise/NubisVoxelCloudNoise.038.tga",
+		"../assets/noise/NubisVoxelCloudNoise.039.tga",
+		"../assets/noise/NubisVoxelCloudNoise.040.tga",
+		"../assets/noise/NubisVoxelCloudNoise.041.tga",
+		"../assets/noise/NubisVoxelCloudNoise.042.tga",
+		"../assets/noise/NubisVoxelCloudNoise.043.tga",
+		"../assets/noise/NubisVoxelCloudNoise.044.tga",
+		"../assets/noise/NubisVoxelCloudNoise.045.tga",
+		"../assets/noise/NubisVoxelCloudNoise.046.tga",
+		"../assets/noise/NubisVoxelCloudNoise.047.tga",
+		"../assets/noise/NubisVoxelCloudNoise.048.tga",
+		"../assets/noise/NubisVoxelCloudNoise.049.tga",
+		"../assets/noise/NubisVoxelCloudNoise.050.tga",
+		"../assets/noise/NubisVoxelCloudNoise.051.tga",
+		"../assets/noise/NubisVoxelCloudNoise.052.tga",
+		"../assets/noise/NubisVoxelCloudNoise.053.tga",
+		"../assets/noise/NubisVoxelCloudNoise.054.tga",
+		"../assets/noise/NubisVoxelCloudNoise.055.tga",
+		"../assets/noise/NubisVoxelCloudNoise.056.tga",
+		"../assets/noise/NubisVoxelCloudNoise.057.tga",
+		"../assets/noise/NubisVoxelCloudNoise.058.tga",
+		"../assets/noise/NubisVoxelCloudNoise.059.tga",
+		"../assets/noise/NubisVoxelCloudNoise.060.tga",
+		"../assets/noise/NubisVoxelCloudNoise.061.tga",
+		"../assets/noise/NubisVoxelCloudNoise.062.tga",
+		"../assets/noise/NubisVoxelCloudNoise.063.tga",
+		"../assets/noise/NubisVoxelCloudNoise.064.tga",
+		"../assets/noise/NubisVoxelCloudNoise.065.tga",
+		"../assets/noise/NubisVoxelCloudNoise.066.tga",
+		"../assets/noise/NubisVoxelCloudNoise.067.tga",
+		"../assets/noise/NubisVoxelCloudNoise.068.tga",
+		"../assets/noise/NubisVoxelCloudNoise.069.tga",
+		"../assets/noise/NubisVoxelCloudNoise.070.tga",
+		"../assets/noise/NubisVoxelCloudNoise.071.tga",
+		"../assets/noise/NubisVoxelCloudNoise.072.tga",
+		"../assets/noise/NubisVoxelCloudNoise.073.tga",
+		"../assets/noise/NubisVoxelCloudNoise.074.tga",
+		"../assets/noise/NubisVoxelCloudNoise.075.tga",
+		"../assets/noise/NubisVoxelCloudNoise.076.tga",
+		"../assets/noise/NubisVoxelCloudNoise.077.tga",
+		"../assets/noise/NubisVoxelCloudNoise.078.tga",
+		"../assets/noise/NubisVoxelCloudNoise.079.tga",
+		"../assets/noise/NubisVoxelCloudNoise.080.tga",
+		"../assets/noise/NubisVoxelCloudNoise.081.tga",
+		"../assets/noise/NubisVoxelCloudNoise.082.tga",
+		"../assets/noise/NubisVoxelCloudNoise.083.tga",
+		"../assets/noise/NubisVoxelCloudNoise.084.tga",
+		"../assets/noise/NubisVoxelCloudNoise.085.tga",
+		"../assets/noise/NubisVoxelCloudNoise.086.tga",
+		"../assets/noise/NubisVoxelCloudNoise.087.tga",
+		"../assets/noise/NubisVoxelCloudNoise.088.tga",
+		"../assets/noise/NubisVoxelCloudNoise.089.tga",
+		"../assets/noise/NubisVoxelCloudNoise.090.tga",
+		"../assets/noise/NubisVoxelCloudNoise.091.tga",
+		"../assets/noise/NubisVoxelCloudNoise.092.tga",
+		"../assets/noise/NubisVoxelCloudNoise.093.tga",
+		"../assets/noise/NubisVoxelCloudNoise.094.tga",
+		"../assets/noise/NubisVoxelCloudNoise.095.tga",
+		"../assets/noise/NubisVoxelCloudNoise.096.tga",
+		"../assets/noise/NubisVoxelCloudNoise.097.tga",
+		"../assets/noise/NubisVoxelCloudNoise.098.tga",
+		"../assets/noise/NubisVoxelCloudNoise.099.tga",
+		"../assets/noise/NubisVoxelCloudNoise.100.tga",
+		"../assets/noise/NubisVoxelCloudNoise.101.tga",
+		"../assets/noise/NubisVoxelCloudNoise.102.tga",
+		"../assets/noise/NubisVoxelCloudNoise.103.tga",
+		"../assets/noise/NubisVoxelCloudNoise.104.tga",
+		"../assets/noise/NubisVoxelCloudNoise.105.tga",
+		"../assets/noise/NubisVoxelCloudNoise.106.tga",
+		"../assets/noise/NubisVoxelCloudNoise.107.tga",
+		"../assets/noise/NubisVoxelCloudNoise.108.tga",
+		"../assets/noise/NubisVoxelCloudNoise.109.tga",
+		"../assets/noise/NubisVoxelCloudNoise.110.tga",
+		"../assets/noise/NubisVoxelCloudNoise.111.tga",
+		"../assets/noise/NubisVoxelCloudNoise.112.tga",
+		"../assets/noise/NubisVoxelCloudNoise.113.tga",
+		"../assets/noise/NubisVoxelCloudNoise.114.tga",
+		"../assets/noise/NubisVoxelCloudNoise.115.tga",
+		"../assets/noise/NubisVoxelCloudNoise.116.tga",
+		"../assets/noise/NubisVoxelCloudNoise.117.tga",
+		"../assets/noise/NubisVoxelCloudNoise.118.tga",
+		"../assets/noise/NubisVoxelCloudNoise.119.tga",
+		"../assets/noise/NubisVoxelCloudNoise.120.tga",
+		"../assets/noise/NubisVoxelCloudNoise.121.tga",
+		"../assets/noise/NubisVoxelCloudNoise.122.tga",
+		"../assets/noise/NubisVoxelCloudNoise.123.tga",
+		"../assets/noise/NubisVoxelCloudNoise.124.tga",
+		"../assets/noise/NubisVoxelCloudNoise.125.tga",
+		"../assets/noise/NubisVoxelCloudNoise.126.tga",
+		"../assets/noise/NubisVoxelCloudNoise.127.tga",
+		"../assets/noise/NubisVoxelCloudNoise.128.tga"
+	};
+
+
+
 #include "CompiledShaders/VolumetricsCS.h"
 
 	VolumetricContext::VolumetricContext(Volume _volumes[VOLUME_AMOUNT], CameraSettings _cameraSettings,
 	                                     Settings _settings) :
-		m_noise({256, 256, 256}),
+		m_noise(NOISE_TEXTURE),
 		m_cameraSettings(_cameraSettings),
 		m_settings(_settings)
 	{
@@ -55,10 +188,11 @@ namespace Volumarcher
 		m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
 	}
 
-	void VolumetricContext::SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size)
+	void VolumetricContext::SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size, glm::vec3 _worldSpaceSize)
 	{
 		m_cloudVolumeVoxels.Create3D(_size.x * sizeof(float), _size.x, _size.y, _size.z, DXGI_FORMAT_R32_FLOAT,
 		                             _densityGrid.data());
+		m_worldSize = _worldSpaceSize;
 	}
 
 	//For spherical volumes
@@ -95,8 +229,8 @@ namespace Volumarcher
 			_camPos, m_time, camDir
 		};
 		VolumetricSettings baseSettings{
-			glm::vec3(0, 0, 0),
-			m_settings.baseSampleCount, glm::vec3(0.5f), m_settings.lightingSampleCount, m_settings.ambientSampleCount,
+			glm::vec3(0, 0, 0), m_settings.baseSampleCount, m_worldSize, m_settings.lightingSampleCount,
+			m_settings.ambientSampleCount,
 			screenX, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar,
 			tan(glm::radians(m_cameraSettings.vFov) / 2.f)
 		};
@@ -113,7 +247,7 @@ namespace Volumarcher
 		//Bind volumes
 		computeContext.SetDynamicDescriptor(4, 0, m_volumeBuffer.GetSRV());
 		//  Noise textures
-		computeContext.SetDynamicDescriptor(5, 0, m_noise.GetBillowNoise().GetSRV());
+		computeContext.SetDynamicDescriptor(5, 0, m_noise.GetNoise().GetSRV());
 		//Volumes texture
 		computeContext.SetDynamicDescriptor(6, 0, m_cloudVolumeVoxels.GetSRV());
 

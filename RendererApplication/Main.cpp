@@ -205,9 +205,7 @@ void RendererApplication::Startup(void)
 		}
 	}
 
-
-	m_volumetricContext->SetVolumeGrid(grid, {gridSize, gridSize, gridSize});
-
+	m_volumetricContext->SetVolumeGrid(grid, {gridSize, gridSize, gridSize}, {0.4f, 1.f, 0.4f});
 
 	PostEffects::BloomEnable = false;
 	PostEffects::EnableHDR = false;

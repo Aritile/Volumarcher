@@ -18,6 +18,8 @@
     <FxCompile Include="shaders\VolumetricsCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="external\stb_image.h" />
+    <ClInclude Include="include\ImageNoise.h" />
     <ClInclude Include="include\CloudNoise.h" />
     <ClInclude Include="include\Volumarcher.h" />
     <ClInclude Include="shaders\ShaderCommon.h" />
@@ -68,6 +70,7 @@
     <ClInclude Include="source\external\libnoise\win32\resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\ImageNoise.cpp" />
     <ClCompile Include="source\CloudNoise.cpp" />
     <ClCompile Include="source\external\libnoise\latlon.cpp" />
     <ClCompile Include="source\external\libnoise\model\cylinder.cpp" />

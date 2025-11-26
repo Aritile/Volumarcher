@@ -57,6 +57,8 @@
     <ClInclude Include="source\external\libnoise\model\cylinder.h" />
     <ClInclude Include="source\external\libnoise\module\abs.h" />
     <ClInclude Include="source\external\libnoise\win32\resource.h" />
+    <ClInclude Include="external\stb_image.h" />
+    <ClInclude Include="include\ImageNoise.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Volumarcher.cpp" />
@@ -98,6 +100,7 @@
     <ClCompile Include="source\external\libnoise\model\cylinder.cpp" />
     <ClCompile Include="source\external\libnoise\module\abs.cpp" />
     <ClCompile Include="source\external\libnoise\win32\dllmain.cpp" />
+    <ClCompile Include="source\ImageNoise.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source\external\libnoise\win32\libnoise.def" />

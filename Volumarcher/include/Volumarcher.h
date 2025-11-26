@@ -10,6 +10,7 @@
 #include "glm/gtc/quaternion.hpp"
 
 #include "CloudNoise.h"
+#include "ImageNoise.h"
 
 namespace Volumarcher
 {
@@ -41,7 +42,7 @@ namespace Volumarcher
 
 		//void SetVolumes(Volume _volumes[VOLUME_AMOUNT]);
 
-		void SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size);
+		void SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size, glm::vec3 _worldSpaceSize);
 
 		Settings GetSettings() const { return m_settings; }
 		void SetSettings(const Settings _volumetricSettings) { m_settings = _volumetricSettings; }
@@ -53,8 +54,8 @@ namespace Volumarcher
 		            glm::quat _camRot = glm::identity<glm::quat>());
 
 	private:
-		//TODO: Make this user specified per volume
-		CloudNoise m_noise;
+		//TODO: Make this user specified 
+		ImageNoise m_noise;
 
 		Texture m_cloudVolumeVoxels;
 
@@ -64,5 +65,6 @@ namespace Volumarcher
 		CameraSettings m_cameraSettings;
 		Settings m_settings;
 		float m_time{0.f};
+		glm::vec3 m_worldSize{1.f};
 	};
 }

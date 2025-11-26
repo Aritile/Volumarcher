@@ -22,7 +22,7 @@ cbuffer WorldSettings : register(b2) {
 
 StructuredBuffer<Volume> volumes : register(t1);
 
-Texture3D<float> billowNoise : register(t2);
+Texture3D<float4> billowNoise : register(t2);
 SamplerState noiseSampler : register(s0);
 SamplerState profileSampler : register(s1);
 
@@ -74,12 +74,12 @@ float SampleProfile(float3 _sample)
 float SampleDensity(float3 _sample, float _profile)
 {
     float density = _profile;
-    float scale = 0.23;
+    float scale = 0.4;
 	float3 noiseTexSample = float3(_sample) * scale;
     //Wind
     noiseTexSample += worldConstants.wind * constants.time;
 
-	float noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0));
+	float noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0).a);
     density = saturate(Remap(density, noise
                , 1, 0, 1));
 
