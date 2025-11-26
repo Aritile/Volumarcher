@@ -40,10 +40,6 @@ static const float3 BACKGROUND_COLOR_UP = float3(0.467, 0.529, 0.671);
 static const float3 BACKGROUND_COLOR_DOWN = float3(0.694, 0.596, 0.467) * 0.5;
 static const float3 AMBIENT_COLOR = float3(0.467, 0.529, 0.671);
 
-
-static const float ABSORPTION = 0.5;
-static const float SCATTERING = 0.5;
-static const float ABSORPTION_SCATTERING = ABSORPTION + SCATTERING;
 static const float ECCENTRICITY = 0.2;
 
 
@@ -180,7 +176,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
         sampleDensity += SampleDensity(sample, profile);
         if (sampleDensity == 0)
             continue;
-                //Ambient approximation, gives popcorn effect
+        //Ambient approximation, gives popcorn effect
         sampleLight += saturate((1 - profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR * PI);
         float lightAngle = dot(rayDir, -SUN_DIR);
         float inSunLightDensitySamples = GetDirectLightDensitySamples(sample);
@@ -189,7 +185,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
         light += sampleLight * transmittance * sampleDensity * stepSize;
 
-        transmittance *= exp(-stepSize * ABSORPTION_SCATTERING * sampleDensity);
+        transmittance *= exp(-stepSize * sampleDensity);
         if (transmittance < TRANSMITTANCE_CUTOFF)
             break;
     }

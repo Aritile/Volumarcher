@@ -195,13 +195,6 @@ namespace Volumarcher
 		m_worldSize = _worldSpaceSize;
 	}
 
-	//For spherical volumes
-	//void VolumetricContext::SetVolumes(Volume _volumes[VOLUME_AMOUNT])
-	//{
-	//	m_volumeBuffer.Destroy();
-	//	m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
-	//}
-
 	void VolumetricContext::Update(const float _deltaTime)
 	{
 		m_time += _deltaTime;

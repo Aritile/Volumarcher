@@ -26,7 +26,7 @@ namespace Volumarcher
 
 	struct Settings
 	{
-		int baseSampleCount = 64;
+		int baseSampleCount = 128;
 		int lightingSampleCount = 10;
 		int ambientSampleCount = 3;
 	};
