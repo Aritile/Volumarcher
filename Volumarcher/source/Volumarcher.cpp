@@ -190,7 +190,7 @@ namespace Volumarcher
 		m_grid.LoadVDB(_vdb);
 		m_grid.SetDensityScale(_densityScale);
 		m_gridOrigin = _origin;
-		m_gridScale = normalize(glm::vec3(m_grid.GetSize())) * 1.f / _gridScale;
+		m_gridScale = (1.f / normalize(glm::vec3(m_grid.GetSize()))) * 1.f / _gridScale;
 		//m_gridScale = _gridScale;
 	}
 

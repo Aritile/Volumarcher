@@ -165,7 +165,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float3 light = 0;
     float transmittance = 1.0;
 
-    static const float TRANSMITTANCE_CUTOFF = 0.05;
+    static const float TRANSMITTANCE_CUTOFF = 0.005;
 
     //Ray marching steps
     for (int i = 0; i < renderConstants.baseSampleCount; ++i)
@@ -199,7 +199,10 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
         transmittance *= exp(-stepSize * sampleDensity);
         if (transmittance < TRANSMITTANCE_CUTOFF)
+        {
+            transmittance = 0;
             break;
+        }
     }
     light += transmittance * background;
 

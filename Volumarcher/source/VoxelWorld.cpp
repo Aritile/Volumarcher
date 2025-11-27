@@ -61,7 +61,7 @@ void VoxelWorld::LoadVDB(const std::string& _vdb)
 	m_densityField.Create3D(m_size.x * sizeof(float), m_size.x, m_size.y, m_size.z, DXGI_FORMAT_R32_FLOAT,
 	                        m_densityVoxels.data());
 
-	std::swap(m_size.y, m_size.z);
+	//std::swap(m_size.y, m_size.z);
 
 	m_loaded = true;
 }
