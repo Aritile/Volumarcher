@@ -425,8 +425,9 @@ void DrawGraphHeaders(TextContext& Text, float leftMargin, float topMargin, floa
     }
 }
 
-void GraphRenderer::RenderGraphs(GraphicsContext& Context, GraphType Type)
+void GraphRenderer::RenderGraphs(GraphicsContext& Context, GraphType Type, int frameId)
 {
+	if (frameId != -1) s_FrameID = frameId;
     if (Type == GraphType::Global && GlobalGraphs.Size() == 0 ||
         Type == GraphType::Profile && ProfileGraphs.Size() == 0)
     {
@@ -505,7 +506,7 @@ void GraphRenderer::RenderGraphs(GraphicsContext& Context, GraphType Type)
             (*iter)->RenderGraph(Context, 512, viewport, 1, 0.0f, GlobalGraphs.GetPresetMax(), s_FrameID);
         }
     }
-    s_FrameID++;
+	if (!frameId) s_FrameID++;
     Text.End();
     Context.SetViewport(0, 0, 1920, 1080);
 }

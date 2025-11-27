@@ -26,7 +26,8 @@ namespace GraphRenderer
     Color GetGraphColor( GraphHandle GraphID, GraphType Type);
     XMFLOAT4 GetMaxAvg( GraphType Type );
     void Update( XMFLOAT2 InputNode, GraphHandle GraphID, GraphType Type);
-    void RenderGraphs( GraphicsContext& Context, GraphType Type );
+
+    void RenderGraphs(GraphicsContext& Context, GraphType Type, int frameId = -1);
 
     void SetSelectedIndex(uint32_t selectedIndex);
 

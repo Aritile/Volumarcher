@@ -5,6 +5,7 @@
 #include "../MiniEngine/Core/SystemTime.h"
 #include "../MiniEngine/Core/TextRenderer.h"
 #include "GameInput.h"
+#include "GraphRenderer.h"
 #include "PostEffects.h"
 #include "UploadBuffer.h"
 #include "../MiniEngine/Core/CommandContext.h"
@@ -34,7 +35,7 @@ static uint base_samples = 128;
 static uint direct_samples = 16;
 static uint ambient_samples = 4;
 
-static constexpr uint sampleCountTestSamples[10]
+static constexpr uint sampleCountTestSamples[]
 {
 	4,
 	8,
@@ -47,18 +48,24 @@ static constexpr uint sampleCountTestSamples[10]
 	1024,
 };
 
-static constexpr float coverageCloudDistance[10]
+static constexpr float coverageCloudDistance[16]
 {
 	0.f,
-	0.5f,
-	1.f,
 	2.f,
 	4.f,
+	6.f,
 	8.f,
-	15.f,
+	10.f,
+	12.f,
+	14.f,
+	16.f,
+	18.f,
 	20.f,
-	30.f,
-	40.f,
+	22.f,
+	24.f,
+	26.f,
+	28.f,
+	30.f
 };
 
 static constexpr glm::ivec2 resolutions[8]
@@ -105,11 +112,14 @@ private:
 	const float m_cameraSpeed{2.f};
 	const float m_cameraRotSpeed{0.7f};
 
+	std::vector<float> m_metrics{};
 
 	int framesInTest = 0;
 	int testPhase;
 	ScopedTimer* pixTestTimer;
 	CpuTimer cpuTestTimer;
+
+	int framesGraph{0};
 
 	//Cube/Rasterizor stuff
 	StructuredBuffer vertexBuffer;
@@ -309,6 +319,7 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 				float hz = static_cast<float>(1.0 / sPerFrame);
 				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
 				                hz);
+				m_metrics.push_back(sPerFrame * 1000); // ms
 
 				testPhase++;
 				framesInTest = 0;
@@ -317,6 +328,13 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 					g_currentTest = Test::None;
 					testPhase = 0;
 					framesInTest = 0;
+
+					Utility::Printf("sheet data \n\nsamples\tms\n");
+					for (int i = 0; i < m_metrics.size(); ++i)
+					{
+						Utility::Printf("%d\t%f\n", sampleCountTestSamples[i], m_metrics[i]);
+					}
+
 					return;
 				}
 				std::wstring testName = L"BaseSampleCountTest, Samples: " + std::to_wstring(
@@ -344,6 +362,7 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 				float hz = static_cast<float>(1.0 / sPerFrame);
 				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
 				                hz);
+				m_metrics.push_back(sPerFrame * 1000); // ms
 
 				testPhase++;
 				framesInTest = 0;
@@ -352,6 +371,11 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 					g_currentTest = Test::None;
 					testPhase = 0;
 					framesInTest = 0;
+					Utility::Printf("sheet data \n\ndistance\tms\n");
+					for (int i = 0; i < m_metrics.size(); ++i)
+					{
+						Utility::Printf("%f\t%f\n", coverageCloudDistance[i], m_metrics[i]);
+					}
 					return;
 				}
 				std::wstring testName = L"CloudCoverage Test, Distance to cloud: " + std::to_wstring(
@@ -376,6 +400,7 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 				float hz = static_cast<float>(1.0 / sPerFrame);
 				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
 				                hz);
+				m_metrics.push_back(sPerFrame * 1000); // ms
 
 				testPhase++;
 				framesInTest = 0;
@@ -384,6 +409,12 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 					g_currentTest = Test::None;
 					testPhase = 0;
 					framesInTest = 0;
+
+					Utility::Printf("sheet data \n\nres\tms\n");
+					for (int i = 0; i < m_metrics.size(); ++i)
+					{
+						Utility::Printf("%f\t%f\n", resolutions[i], m_metrics[i]);
+					}
 					return;
 				}
 				std::wstring testName = L"Resolution test, res: " + std::to_wstring(
@@ -479,6 +510,7 @@ void PerformanceTestApplication::StartTest()
 	m_camRot = glm::angleAxis(glm::radians(-90.f), glm::vec3(0, 1, 0)) * glm::angleAxis(m_camPitch, glm::vec3(1, 0, 0));
 	Display::Resize(1920, 1080);
 
+	m_metrics.clear();
 
 	switch (g_currentTest)
 	{
@@ -548,6 +580,9 @@ void PerformanceTestApplication::RenderScene(void)
 		                            m_camPos,
 		                            m_camRot);
 		break;
+	case Test::None:
+		{
+		}
 	}
 
 	//RenderRasterizerPass();
