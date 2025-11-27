@@ -34,13 +34,13 @@ static const float FAR_PLANE = 6;
 
 //TODO: Not hardcode this
 static const float3 SUN_DIR = normalize(float3(-0.5, -1, -0.5));
-static const float3 SUN_LIGHT = float3(0.996, 0.9, 0.8) * 20;
+static const float3 SUN_LIGHT = float3(0.996, 0.8, 0.7) * 10;
 
 static const float3 BACKGROUND_COLOR_UP = float3(0.167, 0.229, 0.971);
 static const float3 BACKGROUND_COLOR_DOWN = float3(0.467, 0.529, 0.971);
-static const float3 AMBIENT_COLOR = lerp(BACKGROUND_COLOR_UP,BACKGROUND_COLOR_DOWN, 0.4) * PI;
+static const float3 AMBIENT_COLOR = lerp(BACKGROUND_COLOR_UP, BACKGROUND_COLOR_DOWN, 0.5) * PI;
 
-static const float ECCENTRICITY = 0.15;
+static const float ECCENTRICITY = 0.2;
 
 
 static const float DEG_TO_RAD = 0.01745;
@@ -73,7 +73,7 @@ float SampleProfile(float3 _sample)
 float UpresProfile(float3 _sample, float _profile, float mip = 0)
 {
     float density = _profile;
-    float scale = 0.7;
+    float scale = 1.0;
     float3 noiseTexSample = float3(_sample) * scale;
     //Wind
     noiseTexSample += worldConstants.wind * constants.time;
@@ -87,7 +87,7 @@ float UpresProfile(float3 _sample, float _profile, float mip = 0)
 
     density = saturate(Remap(density, finalNoise
                , 1, 0, 1));
-    return density*worldConstants.globalDensityScale;
+    return density * worldConstants.globalDensityScale;
 
 }
 
@@ -156,9 +156,16 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float3 rayDir = mul(normalize(float3(rayX, rayY, 1)), camMat);
 
     //Background (maybe temp or optional if scene already has skybox)
-    float3 background = lerp(BACKGROUND_COLOR_DOWN, BACKGROUND_COLOR_UP, saturate((rayDir.y * 0.5) + 0.55));
+    float3 background{0, 0, 0};
     if (screenDepth > 0)
         background = outputTexture[DTid.xy];
+    else
+    {
+        background = lerp(BACKGROUND_COLOR_DOWN, BACKGROUND_COLOR_UP, saturate((rayDir.y * 0.5) + 0.55));
+        float sunDot = saturate(dot(rayDir, -SUN_DIR));
+        float sunAmount = smoothstep(0.99, 1.0, sunDot);
+        background += SUN_LIGHT * (sunAmount + (sunDot * sunDot)*0.05);
+    }
 
     static float stepSize = farPlane / renderConstants.baseSampleCount;
 
@@ -190,8 +197,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
         //Ambient approximation, gives popcorn effect
         sampleLight += saturate(pow(profile, 0.5) * exp(-GetSummedAmbientDensity(sample, mip))) * (AMBIENT_COLOR);
         float lightAngle = dot(rayDir, -SUN_DIR);
-        float inSunLightDensitySamples = GetDirectLightDensitySamples(sample,mip);
-        float lightVolume = InScatteringApprox(1-profile, lightAngle, inSunLightDensitySamples);
+        float inSunLightDensitySamples = GetDirectLightDensitySamples(sample, mip);
+        float lightVolume = InScatteringApprox(1 - profile, lightAngle, inSunLightDensitySamples);
         sampleLight += lightVolume * SUN_LIGHT * HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
 
         totalDensity += sampleDensity * stepSize;

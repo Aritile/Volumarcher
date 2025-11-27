@@ -134,7 +134,6 @@ static constexpr glm::ivec2 resolutions[8]
 };
 
 
-
 class PerformanceTestApplication : public GameCore::IGameApp
 {
 public:
