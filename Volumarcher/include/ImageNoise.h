@@ -12,7 +12,7 @@ class ImageNoise :
 	public VolumeNoise
 {
 public:
-	explicit ImageNoise(const std::vector<std::string>& _pathPerSlice, unsigned int _maximumMips = 5);
+	explicit ImageNoise(const std::vector<std::string>& _pathPerSlice, unsigned int _maximumMips = 10);
 
 	[[nodiscard]] Texture GetNoise() override { return m_noiseTexture; }
 

@@ -163,7 +163,7 @@ libnoise.lib;
 lz4.lib;
 lzma.lib;
 OpenEXR-3_4.lib;
-OpenEXRCore-3_4.lib%(AdditionalDependencies)</AdditionalDependencies>
+OpenEXRCore-3_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>

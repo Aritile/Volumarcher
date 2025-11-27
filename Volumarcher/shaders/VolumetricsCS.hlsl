@@ -92,7 +92,7 @@ float UpresProfile(float3 _sample, float _profile, float mip = 0)
 }
 
 //TODO: This should be precomputed
-float GetSummedAmbientDensity(float3 _sample)
+float GetSummedAmbientDensity(float3 _sample, float _mip)
 {
     float stepSize = (FAR_PLANE * 0.2) / renderConstants.ambientSampleCount;
     float density = 0;
@@ -100,7 +100,7 @@ float GetSummedAmbientDensity(float3 _sample)
     {
         float3 sample = _sample + float3(0, 1, 0) * stepSize * i;
 
-        density += UpresProfile(sample, SampleProfile(sample)) * stepSize;
+        density += UpresProfile(sample, SampleProfile(sample), _mip) * stepSize;
     }
     return density;
 }
@@ -179,15 +179,17 @@ void main(uint3 DTid : SV_DispatchThreadID)
         //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
         float profile = SampleProfile(sample);
 
-        float mip = dist * 0.5;
+        float mip = log2(1.0 + (dist * 300.0)); // TODO: Mip bias as var
+		
 
     	//Density with high detail noise
         sampleDensity += UpresProfile(sample, profile, mip);
         if (sampleDensity == 0)
             continue;
 
+
         //Ambient approximation, gives popcorn effect
-        sampleLight += saturate((1-profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR);
+        sampleLight += saturate((1-profile) * exp(-GetSummedAmbientDensity(sample, mip))) * (AMBIENT_COLOR);
         float lightAngle = dot(rayDir, -SUN_DIR);
         float inSunLightDensitySamples = GetDirectLightDensitySamples(sample,mip);
         float lightVolume = InScatteringApprox(profile, lightAngle, inSunLightDensitySamples);
