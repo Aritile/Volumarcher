@@ -73,7 +73,7 @@ float SampleProfile(float3 _sample)
 float UpresProfile(float3 _sample, float _profile, float mip = 0)
 {
     float density = _profile;
-    float scale = 1.0;
+    float scale = 0.5;
     float3 noiseTexSample = float3(_sample) * scale;
     //Wind
     noiseTexSample += worldConstants.wind * constants.time;
@@ -189,7 +189,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
 
         //Ambient approximation, gives popcorn effect
-        sampleLight += saturate((1-profile) * exp(-GetSummedAmbientDensity(sample, mip))) * (AMBIENT_COLOR);
+        sampleLight += saturate(pow(1 - profile, 0.5) * exp(-GetSummedAmbientDensity(sample, mip))) * (AMBIENT_COLOR);
         float lightAngle = dot(rayDir, -SUN_DIR);
         float inSunLightDensitySamples = GetDirectLightDensitySamples(sample,mip);
         float lightVolume = InScatteringApprox(profile, lightAngle, inSunLightDensitySamples);

@@ -39,7 +39,7 @@ namespace Volumarcher
 	{
 		int baseSampleCount = 128;
 		int lightingSampleCount = 16;
-		int ambientSampleCount = 5;
+		int ambientSampleCount = 10;
 	};
 
 	class VolumetricContext
