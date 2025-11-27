@@ -80,7 +80,7 @@ void Texture::Create2D( size_t RowPitchBytes, size_t Width, size_t Height, DXGI_
 }
 
 void Texture::Create3D(size_t RowPitchBytes, size_t Width, size_t Height, size_t Depth, DXGI_FORMAT Format,
-                       const void* InitialData)
+                       const void* InitialData, unsigned int mipLevels)
 {
 	Destroy();
 
@@ -95,12 +95,12 @@ void Texture::Create3D(size_t RowPitchBytes, size_t Width, size_t Height, size_t
 	texDesc.Width = Width;
 	texDesc.Height = (UINT)Height;
 	texDesc.DepthOrArraySize = (UINT16)m_Depth;
-	texDesc.MipLevels = 1;
+	texDesc.MipLevels = mipLevels;
 	texDesc.Format = Format;
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;

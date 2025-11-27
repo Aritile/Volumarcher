@@ -70,7 +70,7 @@ float SampleProfile(float3 _sample)
     return voxelVolume.SampleLevel(profileSampler, sample, 0)*2;
 }
 
-float UpresProfile(float3 _sample, float _profile)
+float UpresProfile(float3 _sample, float _profile, float mip = 0)
 {
     float density = _profile;
     float scale = 1.0;
@@ -78,7 +78,7 @@ float UpresProfile(float3 _sample, float _profile)
     //Wind
     noiseTexSample += worldConstants.wind * constants.time;
 
-    float4 noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0));
+    float4 noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, mip));
 
     float billowType = pow(_profile, 0.25); // Pow to change the gradient to be more towards high freq,     could be an artistic setting
     float billowNoise = lerp(noise.b * 0.3, noise.a * 0.3, billowType);
@@ -107,7 +107,7 @@ float GetSummedAmbientDensity(float3 _sample)
 
 
 
-float GetDirectLightDensitySamples(float3 _sample)
+float GetDirectLightDensitySamples(float3 _sample, float _mip)
 {
 
     float totalDensity = 0;
@@ -116,7 +116,7 @@ float GetDirectLightDensitySamples(float3 _sample)
     {
         float3 sample = _sample + -SUN_DIR * (i * stepSize);
         float profile = SampleProfile(sample);
-        totalDensity += UpresProfile(sample, profile) * stepSize;
+        totalDensity += UpresProfile(sample, profile, _mip) * stepSize;
     }
     return totalDensity;
 }
@@ -170,22 +170,26 @@ void main(uint3 DTid : SV_DispatchThreadID)
     //Ray marching steps
     for (int i = 0; i < renderConstants.baseSampleCount; ++i)
     {
-        float3 sample = rayOrigin + rayDir * (i * stepSize);
+        float dist = (i * stepSize);
+        
+        float3 sample = rayOrigin + rayDir * dist;
         float sampleDensity = 0;
         float3 sampleLight = 0;
 
         //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
         float profile = SampleProfile(sample);
 
+        float mip = dist * 0.5;
+
     	//Density with high detail noise
-        sampleDensity += UpresProfile(sample, profile);
+        sampleDensity += UpresProfile(sample, profile, mip);
         if (sampleDensity == 0)
             continue;
 
         //Ambient approximation, gives popcorn effect
         sampleLight += saturate((1-profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR);
         float lightAngle = dot(rayDir, -SUN_DIR);
-        float inSunLightDensitySamples = GetDirectLightDensitySamples(sample);
+        float inSunLightDensitySamples = GetDirectLightDensitySamples(sample,mip);
         float lightVolume = InScatteringApprox(profile, lightAngle, inSunLightDensitySamples);
         sampleLight += lightVolume * SUN_LIGHT * HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
 

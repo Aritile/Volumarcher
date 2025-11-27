@@ -44,3 +44,9 @@ struct Volume
 	float pad1;
 	float pad2;
 };
+
+
+struct MipConstants
+{
+	int outSize;
+};
