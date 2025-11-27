@@ -22,6 +22,9 @@ using namespace Graphics;
 enum class Test
 {
 	BaseSampleCountSingle,
+	LightSampleCountSingle,
+	AmbientSampleCountSingle,
+	CombinedSampleCount,
 	CloudCoverage,
 	Resolution,
 	None
@@ -29,7 +32,7 @@ enum class Test
 
 static Test g_currentTest;
 
-static constexpr uint MAX_FRAMES_PER_TEST_PHASE = 60;
+static constexpr uint MAX_FRAMES_PER_TEST_PHASE = 100;
 
 static uint base_samples = 128;
 static uint direct_samples = 16;
@@ -45,8 +48,58 @@ static constexpr uint sampleCountTestSamples[]
 	128,
 	256,
 	512,
+	640,
+	768,
 	1024,
+	1536,
 };
+
+static constexpr uint combinedSampleCountTest[]
+{
+	4,
+	8,
+	16,
+	32,
+	64,
+	128,
+	256,
+	256 + 128,
+	512
+};
+
+static constexpr uint lightSampleCountTestSamples[]
+{
+	2,
+	4,
+	8,
+	10,
+	12,
+	14,
+	16,
+	20,
+	24,
+	28,
+	32,
+	64
+};
+
+static constexpr uint ambientSampleCountTestSamples[]
+{
+	1,
+	2,
+	3,
+	4,
+	5,
+	6,
+	7,
+	8,
+	9,
+	10,
+	11,
+	16,
+	32,
+};
+
 
 static constexpr float coverageCloudDistance[16]
 {
@@ -264,7 +317,7 @@ void PerformanceTestApplication::Startup(void)
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, 70.f};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(cameraSettings);
 	m_volumetricContext->LoadGrid("../assets/disney.vdb", glm::vec3(1.f), {-2.5f, -0.6f, -1.35}, 4.f);
-	
+
 	PostEffects::BloomEnable = false;
 	PostEffects::EnableHDR = false;
 	PostEffects::EnableAdaptation = false;
@@ -290,12 +343,27 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 		g_currentTest = Test::BaseSampleCountSingle;
 		StartTest();
 	}
-	else if (GameInput::IsFirstPressed(GameInput::kKey_2))
+	if (GameInput::IsFirstPressed(GameInput::kKey_2))
+	{
+		g_currentTest = Test::LightSampleCountSingle;
+		StartTest();
+	}
+	else if (GameInput::IsFirstPressed(GameInput::kKey_3))
+	{
+		g_currentTest = Test::AmbientSampleCountSingle;
+		StartTest();
+	}
+	else if (GameInput::IsFirstPressed(GameInput::kKey_4))
+	{
+		g_currentTest = Test::CombinedSampleCount;
+		StartTest();
+	}
+	else if (GameInput::IsFirstPressed(GameInput::kKey_5))
 	{
 		g_currentTest = Test::CloudCoverage;
 		StartTest();
 	}
-	else if (GameInput::IsFirstPressed(GameInput::kKey_3))
+	else if (GameInput::IsFirstPressed(GameInput::kKey_6))
 	{
 		g_currentTest = Test::Resolution;
 		StartTest();
@@ -344,6 +412,135 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 				m_volumetricContext->SetSettings({
 					static_cast<int>(sampleCountTestSamples[testPhase]), static_cast<int>(direct_samples),
 					static_cast<int>(ambient_samples)
+				});
+
+				cpuTestTimer.Reset();
+				cpuTestTimer.Start();
+			}
+			break;
+		}
+	case Test::LightSampleCountSingle:
+		{
+			if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
+			{
+				delete pixTestTimer;
+				cpuTestTimer.Stop();
+				float sPerFrame = (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE));
+				float hz = static_cast<float>(1.0 / sPerFrame);
+				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
+				                hz);
+				m_metrics.push_back(sPerFrame * 1000); // ms
+
+				testPhase++;
+				framesInTest = 0;
+				if (testPhase >= _countof(lightSampleCountTestSamples))
+				{
+					g_currentTest = Test::None;
+					testPhase = 0;
+					framesInTest = 0;
+
+					Utility::Printf("sheet data \n\nsamples\tms\n");
+					for (int i = 0; i < m_metrics.size(); ++i)
+					{
+						Utility::Printf("%d\t%f\n", lightSampleCountTestSamples[i], m_metrics[i]);
+					}
+
+					return;
+				}
+				std::wstring testName = L"LightSampleCountTest, Samples: " + std::to_wstring(
+					static_cast<int>(lightSampleCountTestSamples[testPhase]));
+				Utility::Printf("Starting test: %ls\n", testName.c_str());
+				pixTestTimer = new ScopedTimer(testName);
+				m_volumetricContext->SetSettings({
+					static_cast<int>(base_samples), static_cast<int>(lightSampleCountTestSamples[testPhase]),
+					static_cast<int>(ambient_samples)
+				});
+
+				cpuTestTimer.Reset();
+				cpuTestTimer.Start();
+			}
+			break;
+		}
+	case Test::AmbientSampleCountSingle:
+		{
+			if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
+			{
+				delete pixTestTimer;
+				cpuTestTimer.Stop();
+				float sPerFrame = (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE));
+				float hz = static_cast<float>(1.0 / sPerFrame);
+				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
+				                hz);
+				m_metrics.push_back(sPerFrame * 1000); // ms
+
+				testPhase++;
+				framesInTest = 0;
+				if (testPhase >= _countof(ambientSampleCountTestSamples))
+				{
+					g_currentTest = Test::None;
+					testPhase = 0;
+					framesInTest = 0;
+
+					Utility::Printf("sheet data \n\nsamples\tms\n");
+					for (int i = 0; i < m_metrics.size(); ++i)
+					{
+						Utility::Printf("%d\t%f\n", ambientSampleCountTestSamples[i], m_metrics[i]);
+					}
+
+					return;
+				}
+				std::wstring testName = L"AmbientSampleCountTest, Samples: " + std::to_wstring(
+					static_cast<int>(ambientSampleCountTestSamples[testPhase]));
+				Utility::Printf("Starting test: %ls\n", testName.c_str());
+				pixTestTimer = new ScopedTimer(testName);
+				m_volumetricContext->SetSettings({
+					static_cast<int>(base_samples), static_cast<int>(direct_samples),
+					static_cast<int>(ambientSampleCountTestSamples[testPhase])
+				});
+
+				cpuTestTimer.Reset();
+				cpuTestTimer.Start();
+			}
+			break;
+		}
+	case Test::CombinedSampleCount:
+		{
+			if (framesInTest > MAX_FRAMES_PER_TEST_PHASE)
+			{
+				delete pixTestTimer;
+				cpuTestTimer.Stop();
+				float sPerFrame = (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE));
+				float hz = static_cast<float>(1.0 / sPerFrame);
+				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
+				                hz);
+				m_metrics.push_back(sPerFrame * 1000); // ms
+
+				testPhase++;
+				framesInTest = 0;
+				if (testPhase >= _countof(combinedSampleCountTest))
+				{
+					g_currentTest = Test::None;
+					testPhase = 0;
+					framesInTest = 0;
+
+					Utility::Printf("sheet data \n\nsamples\tms\n");
+					for (int i = 0; i < m_metrics.size(); ++i)
+					{
+						Utility::Printf("%d\t%f\n", combinedSampleCountTest[i], m_metrics[i]);
+					}
+
+					return;
+				}
+				std::wstring testName = L"CombinedSampleCountTest, Samples: " + std::to_wstring(
+					static_cast<int>(combinedSampleCountTest[testPhase]));
+				Utility::Printf("Starting test: %ls\n", testName.c_str());
+				pixTestTimer = new ScopedTimer(testName);
+				int samples = static_cast<int>(combinedSampleCountTest[testPhase]);
+				m_volumetricContext->SetSettings({
+					samples, samples, samples
 				});
 
 				cpuTestTimer.Reset();
@@ -530,6 +727,55 @@ void PerformanceTestApplication::StartTest()
 			cpuTestTimer.Start();
 			break;
 		}
+	case Test::LightSampleCountSingle:
+		{
+			testPhase = 0;
+			framesInTest = 0;
+			std::wstring testName = L"DirectSampleCountTest, Samples: " + std::to_wstring(
+				static_cast<int>(lightSampleCountTestSamples[testPhase]));
+			Utility::Printf("Starting test: %ls\n", testName);
+			pixTestTimer = new ScopedTimer(testName);
+			cpuTestTimer.Reset();
+			m_volumetricContext->SetSettings({
+				static_cast<int>(base_samples), static_cast<int>(lightSampleCountTestSamples[testPhase]),
+				static_cast<int>(ambient_samples)
+			});
+			cpuTestTimer.Start();
+			break;
+		}
+	case Test::AmbientSampleCountSingle:
+		{
+			testPhase = 0;
+			framesInTest = 0;
+			std::wstring testName = L"AmbientSampleCountTest, Samples: " + std::to_wstring(
+				static_cast<int>(ambientSampleCountTestSamples[testPhase]));
+			Utility::Printf("Starting test: %ls\n", testName);
+			pixTestTimer = new ScopedTimer(testName);
+			cpuTestTimer.Reset();
+			m_volumetricContext->SetSettings({
+				static_cast<int>(base_samples), static_cast<int>(direct_samples),
+				static_cast<int>(ambientSampleCountTestSamples[testPhase])
+			});
+			cpuTestTimer.Start();
+			break;
+		}
+	case Test::CombinedSampleCount:
+		{
+			testPhase = 0;
+			framesInTest = 0;
+			std::wstring testName = L"CombinedSampleCountTest, Samples: " + std::to_wstring(
+				static_cast<int>(combinedSampleCountTest[testPhase]));
+			Utility::Printf("Starting test: %ls\n", testName);
+			pixTestTimer = new ScopedTimer(testName);
+			cpuTestTimer.Reset();
+			m_volumetricContext->SetSettings({
+				static_cast<int>(combinedSampleCountTest[testPhase]),
+				static_cast<int>(combinedSampleCountTest[testPhase]),
+				static_cast<int>(combinedSampleCountTest[testPhase])
+			});
+			cpuTestTimer.Start();
+			break;
+		}
 	case Test::CloudCoverage:
 		{
 			testPhase = 0;
@@ -572,6 +818,9 @@ void PerformanceTestApplication::RenderScene(void)
 	switch (g_currentTest)
 	{
 	case Test::BaseSampleCountSingle:
+	case Test::LightSampleCountSingle:
+	case Test::AmbientSampleCountSingle:
+	case Test::CombinedSampleCount:
 	case Test::CloudCoverage:
 	case Test::Resolution:
 		m_volumetricContext->Render(g_SceneColorBuffer,

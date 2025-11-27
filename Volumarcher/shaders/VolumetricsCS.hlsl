@@ -179,7 +179,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
         //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
         float profile = SampleProfile(sample);
 
-        float mip = log2(1.0 + (dist * 300.0)); // TODO: Mip bias as var
+        float mip = log2(1.0 + (dist * 150.0)); // TODO: Mip bias as var
 		
 
     	//Density with high detail noise

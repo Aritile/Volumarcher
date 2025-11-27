@@ -185,9 +185,8 @@ void RendererApplication::Startup(void)
 	Utility::Printf("Creating Volumetric Context\n");
 	CpuTimer startupTimer;
 	startupTimer.Start();
-	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 2), 4.f, 25.f}};
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, m_vFov};
-	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
+	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(cameraSettings);
 
 	m_volumetricContext->LoadGrid("../assets/disney.vdb", glm::vec3(2.f), glm::vec3(0), 4.f);
 	
