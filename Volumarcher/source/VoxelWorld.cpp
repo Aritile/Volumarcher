@@ -5,9 +5,10 @@
 
 #include "../../MiniEngine/Core/Utility.h"
 
-VoxelWorld::VoxelWorld(const std::string& _vdbPath)
+VoxelWorld::VoxelWorld(const std::string& _vdbPath, float _densityScale)
 {
 	LoadVDB(_vdbPath);
+	SetDensityScale(_densityScale);
 	return;
 }
 

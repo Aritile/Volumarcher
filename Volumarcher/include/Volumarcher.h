@@ -5,6 +5,10 @@
 #include "CloudNoise.h"
 #include "CloudNoise.h"
 #include "CloudNoise.h"
+#include "CloudNoise.h"
+#include "CloudNoise.h"
+#include "CloudNoise.h"
+#include "CloudNoise.h"
 #include "../MiniEngine/Core/CommandContext.h"
 #include "../MiniEngine/Core/RootSignature.h"
 #include "../MiniEngine/Core/PipelineState.h"
@@ -48,7 +52,7 @@ namespace Volumarcher
 
 
 		void LoadGrid(const std::string& _vdb, glm::vec3 _gridScale = glm::vec3(1.f),
-		              glm::vec3 _origin = glm::vec3(0.f));
+		              glm::vec3 _origin = glm::vec3(0.f), float _densityScale = 1.f);
 
 		[[nodiscard]] Settings GetSettings() const { return m_settings; }
 		void SetSettings(const Settings _volumetricSettings) { m_settings = _volumetricSettings; }

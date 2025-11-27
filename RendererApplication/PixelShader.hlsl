@@ -7,8 +7,8 @@ struct Input
 static const float3 SUN_DIR = normalize(float3(0.4, -1, 0.4));
 static const float3 SUN_LIGHT = float3(0.996, 0.9, 0.8) * 20;
 
-static const float3 BACKGROUND_COLOR_UP = float3(0.467, 0.529, 0.671);
-static const float3 BACKGROUND_COLOR_DOWN = float3(0.694, 0.596, 0.467) * 0.5;
+static const float3 BACKGROUND_COLOR_UP = float3(0.167, 0.229, 0.971);
+static const float3 BACKGROUND_COLOR_DOWN = float3(0.467, 0.529, 0.971);
 
 float4 main(Input input) : SV_TARGET
 {

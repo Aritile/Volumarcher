@@ -36,9 +36,9 @@ static const float FAR_PLANE = 6;
 static const float3 SUN_DIR = normalize(float3(-0.5, -1, -0.5));
 static const float3 SUN_LIGHT = float3(0.996, 0.9, 0.8) * 20;
 
-static const float3 BACKGROUND_COLOR_UP = float3(0.467, 0.529, 0.871);
-static const float3 BACKGROUND_COLOR_DOWN = float3(0.694, 0.596, 0.467) * 0.5;
-static const float3 AMBIENT_COLOR = float3(0.467, 0.529, 0.871)*PI;
+static const float3 BACKGROUND_COLOR_UP = float3(0.167, 0.229, 0.971);
+static const float3 BACKGROUND_COLOR_DOWN = float3(0.467, 0.529, 0.971);
+static const float3 AMBIENT_COLOR = lerp(BACKGROUND_COLOR_UP,BACKGROUND_COLOR_DOWN, 0.2) * PI;
 
 static const float ECCENTRICITY = 0.2;
 
@@ -87,7 +87,7 @@ float UpresProfile(float3 _sample, float _profile)
 
     density = saturate(Remap(density, finalNoise
                , 1, 0, 1));
-    return density*5;
+    return density*worldConstants.globalDensityScale;
 
 }
 

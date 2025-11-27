@@ -189,7 +189,8 @@ void RendererApplication::Startup(void)
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, m_vFov};
 	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
 
-	m_volumetricContext->LoadGrid("../assets/disney.vdb", glm::vec3(3.f));
+	m_volumetricContext->LoadGrid("../assets/disney.vdb", glm::vec3(2.f), glm::vec3(0), 4.f);
+	
 
 	PostEffects::BloomEnable = false;
 	PostEffects::EnableHDR = true;

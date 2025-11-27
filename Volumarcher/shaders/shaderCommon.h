@@ -30,6 +30,7 @@ struct VolumetricSettings
 struct VolumetricWorld
 {
 	float3 wind; // Direction/speed the noise scrolls
+	float globalDensityScale; // scale the density from world (0-1) with this
 };
 
 static const uint VOLUME_AMOUNT = 1;

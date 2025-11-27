@@ -188,9 +188,11 @@ namespace Volumarcher
 		m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
 	}
 
-	void VolumetricContext::LoadGrid(const std::string& _vdb, glm::vec3 _gridScale, glm::vec3 _origin)
+	void VolumetricContext::LoadGrid(const std::string& _vdb, glm::vec3 _gridScale, glm::vec3 _origin,
+	                                 float _densityScale)
 	{
 		m_grid.LoadVDB(_vdb);
+		m_grid.SetDensityScale(_densityScale);
 		m_gridOrigin = _origin;
 		m_gridScale = normalize(glm::vec3(m_grid.GetSize())) * 1.f / _gridScale;
 		//m_gridScale = _gridScale;
@@ -236,7 +238,8 @@ namespace Volumarcher
 			tan(glm::radians(m_cameraSettings.vFov) / 2.f)
 		};
 		VolumetricWorld worldSettings{
-			glm::vec3(1, 0, 0.5) * 0.05f
+			glm::vec3(1, 0, 0.5) * 0.05f,
+			m_grid.GetDensityScale()
 		};
 
 		computeContext.SetConstantArray(2, sizeof(VolumetricDynamics) / sizeof(uint32_t), &cameraSettings);
