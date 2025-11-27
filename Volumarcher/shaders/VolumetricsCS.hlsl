@@ -40,7 +40,7 @@ static const float3 BACKGROUND_COLOR_UP = float3(0.167, 0.229, 0.971);
 static const float3 BACKGROUND_COLOR_DOWN = float3(0.467, 0.529, 0.971);
 static const float3 AMBIENT_COLOR = lerp(BACKGROUND_COLOR_UP,BACKGROUND_COLOR_DOWN, 0.4) * PI;
 
-static const float ECCENTRICITY = 0.2;
+static const float ECCENTRICITY = 0.15;
 
 
 static const float DEG_TO_RAD = 0.01745;
@@ -67,13 +67,13 @@ float SampleProfile(float3 _sample)
     float3 sample = (_sample - renderConstants.origin) * renderConstants.worldSize;
     if (any(sample > 1.0) || any(sample < 0.0))
         return 0.0;
-    return voxelVolume.SampleLevel(profileSampler, sample, 0)*2;
+    return voxelVolume.SampleLevel(profileSampler, sample, 0);
 }
 
 float UpresProfile(float3 _sample, float _profile, float mip = 0)
 {
     float density = _profile;
-    float scale = 0.5;
+    float scale = 0.7;
     float3 noiseTexSample = float3(_sample) * scale;
     //Wind
     noiseTexSample += worldConstants.wind * constants.time;
@@ -123,7 +123,7 @@ float GetDirectLightDensitySamples(float3 _sample, float _mip)
 
 float InScatteringApprox(float _baseDimensionalProfile, float _sun_dot, float _sunDensitySamples)
 {
-    return exp(-_sunDensitySamples * Remap(_sun_dot, 0.0, 0.9, 0.25, Remap(_baseDimensionalProfile, 25.0, 0.0, 0.05, 0.25)));
+    return exp(-_sunDensitySamples * Remap(_sun_dot, 0.0, 0.9, 0.25, Remap(_baseDimensionalProfile, 1.0, 0.0, 0.05, 0.25)));
 }
 
 
@@ -163,7 +163,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     static float stepSize = farPlane / renderConstants.baseSampleCount;
 
     float3 light = 0;
-    float transmittance = 1.0;
+    float totalDensity = 0;
 
     static const float TRANSMITTANCE_CUTOFF = 0.005;
 
@@ -173,17 +173,16 @@ void main(uint3 DTid : SV_DispatchThreadID)
         float dist = (i * stepSize);
         
         float3 sample = rayOrigin + rayDir * dist;
-        float sampleDensity = 0;
         float3 sampleLight = 0;
 
-        //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
-        float profile = SampleProfile(sample);
 
         float mip = log2(1.0 + (dist * 150.0)); // TODO: Mip bias as var
 		
 
+        //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
+        float profile = SampleProfile(sample);
     	//Density with high detail noise
-        sampleDensity += UpresProfile(sample, profile, mip);
+        float sampleDensity = UpresProfile(sample, profile, mip);
         if (sampleDensity == 0)
             continue;
 
@@ -195,15 +194,19 @@ void main(uint3 DTid : SV_DispatchThreadID)
         float lightVolume = InScatteringApprox(1-profile, lightAngle, inSunLightDensitySamples);
         sampleLight += lightVolume * SUN_LIGHT * HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
 
-        light += sampleLight * transmittance * sampleDensity * stepSize;
+        totalDensity += sampleDensity * stepSize;
+        float transmittance = exp(-totalDensity);
+        light += sampleLight * transmittance * stepSize * sampleDensity;
 
-        transmittance *= exp(-stepSize * sampleDensity);
         if (transmittance < TRANSMITTANCE_CUTOFF)
         {
-            transmittance = 0;
             break;
         }
     }
+    float transmittance = exp(-totalDensity);
+    if (transmittance < TRANSMITTANCE_CUTOFF)
+        transmittance = 0;
+
     light += transmittance * background;
 
     outputTexture[DTid.xy] = float4(light, 1);
