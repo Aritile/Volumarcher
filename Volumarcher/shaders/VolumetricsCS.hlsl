@@ -38,7 +38,7 @@ static const float3 SUN_LIGHT = float3(0.996, 0.9, 0.8) * 20;
 
 static const float3 BACKGROUND_COLOR_UP = float3(0.167, 0.229, 0.971);
 static const float3 BACKGROUND_COLOR_DOWN = float3(0.467, 0.529, 0.971);
-static const float3 AMBIENT_COLOR = lerp(BACKGROUND_COLOR_UP,BACKGROUND_COLOR_DOWN, 0.2) * PI;
+static const float3 AMBIENT_COLOR = lerp(BACKGROUND_COLOR_UP,BACKGROUND_COLOR_DOWN, 0.4) * PI;
 
 static const float ECCENTRICITY = 0.2;
 
@@ -189,10 +189,10 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
 
         //Ambient approximation, gives popcorn effect
-        sampleLight += saturate(pow(1 - profile, 0.5) * exp(-GetSummedAmbientDensity(sample, mip))) * (AMBIENT_COLOR);
+        sampleLight += saturate(pow(profile, 0.5) * exp(-GetSummedAmbientDensity(sample, mip))) * (AMBIENT_COLOR);
         float lightAngle = dot(rayDir, -SUN_DIR);
         float inSunLightDensitySamples = GetDirectLightDensitySamples(sample,mip);
-        float lightVolume = InScatteringApprox(profile, lightAngle, inSunLightDensitySamples);
+        float lightVolume = InScatteringApprox(1-profile, lightAngle, inSunLightDensitySamples);
         sampleLight += lightVolume * SUN_LIGHT * HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
 
         light += sampleLight * transmittance * sampleDensity * stepSize;
