@@ -28,7 +28,7 @@ enum class Test
 
 static Test g_currentTest;
 
-static constexpr uint MAX_FRAMES_PER_TEST_PHASE = 300;
+static constexpr uint MAX_FRAMES_PER_TEST_PHASE = 60;
 
 static uint base_samples = 128;
 static uint direct_samples = 16;
@@ -47,8 +47,9 @@ static constexpr uint sampleCountTestSamples[10]
 	1024,
 };
 
-static constexpr float coverageCloudDistance[9]
+static constexpr float coverageCloudDistance[10]
 {
+	0.f,
 	0.5f,
 	1.f,
 	2.f,
@@ -57,7 +58,7 @@ static constexpr float coverageCloudDistance[9]
 	15.f,
 	20.f,
 	30.f,
-	50.f,
+	40.f,
 };
 
 static constexpr glm::ivec2 resolutions[8]
@@ -250,9 +251,10 @@ void PerformanceTestApplication::Startup(void)
 	Utility::Printf("Creating Volumetric Context\n");
 	CpuTimer startupTimer;
 	startupTimer.Start();
-	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 3.5f), 4.f, 5.f}};
 	Volumarcher::CameraSettings cameraSettings{0.01f, 50.f, 70.f};
-	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(volumes, cameraSettings);
+	m_volumetricContext = std::make_unique<Volumarcher::VolumetricContext>(cameraSettings);
+	m_volumetricContext->LoadGrid("../assets/disney.vdb", glm::vec3(1.f), {-2.5f, -0.6f, -1.35}, 4.f);
+	
 	PostEffects::BloomEnable = false;
 	PostEffects::EnableHDR = false;
 	PostEffects::EnableAdaptation = false;
@@ -302,9 +304,11 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 			{
 				delete pixTestTimer;
 				cpuTestTimer.Stop();
-				float hz = static_cast<float>(1.0 / (cpuTestTimer.GetTime() / static_cast<double>(
-					MAX_FRAMES_PER_TEST_PHASE)));
-				Utility::Printf("Test phase ran for: %fs | %fhz \n", cpuTestTimer.GetTime(), hz);
+				float sPerFrame = (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE));
+				float hz = static_cast<float>(1.0 / sPerFrame);
+				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
+				                hz);
 
 				testPhase++;
 				framesInTest = 0;
@@ -335,9 +339,11 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 			{
 				delete pixTestTimer;
 				cpuTestTimer.Stop();
-				float hz = static_cast<float>(1.0 / (cpuTestTimer.GetTime() / static_cast<double>(
-					MAX_FRAMES_PER_TEST_PHASE)));
-				Utility::Printf("Test phase ran for: %fs | %fhz \n", cpuTestTimer.GetTime(), hz);
+				float sPerFrame = (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE));
+				float hz = static_cast<float>(1.0 / sPerFrame);
+				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
+				                hz);
 
 				testPhase++;
 				framesInTest = 0;
@@ -352,7 +358,7 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 					static_cast<int>(coverageCloudDistance[testPhase] - 1.f)); // 1.f is radius of cloud
 				Utility::Printf("Starting test: %ls\n", testName.c_str());
 				pixTestTimer = new ScopedTimer(testName);
-				m_camPos = {0, 0, -coverageCloudDistance[testPhase]};
+				m_camPos = {coverageCloudDistance[testPhase], 0, 0};
 
 				cpuTestTimer.Reset();
 				cpuTestTimer.Start();
@@ -365,9 +371,11 @@ void PerformanceTestApplication::Update(const float _deltaTime)
 			{
 				delete pixTestTimer;
 				cpuTestTimer.Stop();
-				float hz = static_cast<float>(1.0 / (cpuTestTimer.GetTime() / static_cast<double>(
-					MAX_FRAMES_PER_TEST_PHASE)));
-				Utility::Printf("Test phase ran for: %fs | %fhz \n", cpuTestTimer.GetTime(), hz);
+				float sPerFrame = (cpuTestTimer.GetTime() / static_cast<double>(
+					MAX_FRAMES_PER_TEST_PHASE));
+				float hz = static_cast<float>(1.0 / sPerFrame);
+				Utility::Printf("Test phase ran for: %fs | %fms/f| %fhz \n", cpuTestTimer.GetTime(), sPerFrame * 1000,
+				                hz);
 
 				testPhase++;
 				framesInTest = 0;
@@ -467,9 +475,8 @@ void PerformanceTestApplication::StartTest()
 	m_volumetricContext->SetSettings({
 		static_cast<int>(base_samples), static_cast<int>(direct_samples), static_cast<int>(ambient_samples)
 	});
-	Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 3.5f), 4.f, 5.f}};
-	m_volumetricContext->SetVolumes(volumes);
 	m_camPos = {0.f, 0.f, 0.f};
+	m_camRot = glm::angleAxis(glm::radians(-90.f), glm::vec3(0, 1, 0)) * glm::angleAxis(m_camPitch, glm::vec3(1, 0, 0));
 	Display::Resize(1920, 1080);
 
 
@@ -495,13 +502,12 @@ void PerformanceTestApplication::StartTest()
 		{
 			testPhase = 0;
 			framesInTest = 0;
-			Volume volumes[VOLUME_AMOUNT] = {{float3(0, 0, 0), 1.f, 10.f}};
-			m_volumetricContext->SetVolumes(volumes);
 			std::wstring testName = L"CloudCoverage, Cloud distance: " + std::to_wstring(
 				static_cast<int>(coverageCloudDistance[testPhase]));
 			Utility::Printf("Starting test: %ls\n", testName);
 			pixTestTimer = new ScopedTimer(testName);
 			cpuTestTimer.Reset();
+			m_camPos = glm::vec3(coverageCloudDistance[testPhase], 0, 0);
 			m_volumetricContext->SetSettings({
 				static_cast<int>(base_samples), static_cast<int>(direct_samples), static_cast<int>(ambient_samples)
 			});

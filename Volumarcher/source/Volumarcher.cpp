@@ -141,14 +141,14 @@ namespace Volumarcher
 
 #include "CompiledShaders/VolumetricsCS.h"
 
-	VolumetricContext::VolumetricContext(Volume _volumes[VOLUME_AMOUNT], CameraSettings _cameraSettings,
+	VolumetricContext::VolumetricContext(CameraSettings _cameraSettings,
 	                                     Settings _settings) :
 		m_grid(),
 		m_noise(NOISE_TEXTURE),
 		m_cameraSettings(_cameraSettings),
 		m_settings(_settings)
 	{
-		m_rs.Reset(8, 2);
+		m_rs.Reset(7, 2);
 		//Output texture
 		m_rs[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
 		//Scene depth
@@ -156,13 +156,11 @@ namespace Volumarcher
 		//Constants
 		m_rs[2].InitAsConstants(0, sizeof(VolumetricDynamics) / sizeof(uint32_t));
 		m_rs[3].InitAsConstants(1, sizeof(VolumetricSettings) / sizeof(uint32_t));
-		m_rs[7].InitAsConstants(2, sizeof(VolumetricWorld) / sizeof(uint32_t));
-		//Volume buffer
-		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+		m_rs[6].InitAsConstants(2, sizeof(VolumetricWorld) / sizeof(uint32_t));
 		//Noise textures
-		m_rs[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, VOLUME_AMOUNT);
+		m_rs[4].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, VOLUME_AMOUNT);
 		//Volume texture
-		m_rs[6].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 1);
+		m_rs[5].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 1);
 
 		//Linear wrap sampler
 		D3D12_SAMPLER_DESC noiseSamplerDesc{
@@ -184,8 +182,6 @@ namespace Volumarcher
 		m_computePSO.SetRootSignature(m_rs);
 		m_computePSO.SetComputeShader(g_pVolumetricsCS, sizeof(g_pVolumetricsCS));
 		m_computePSO.Finalize();
-
-		m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
 	}
 
 	void VolumetricContext::LoadGrid(const std::string& _vdb, glm::vec3 _gridScale, glm::vec3 _origin,
@@ -246,14 +242,12 @@ namespace Volumarcher
 
 
 		computeContext.SetConstantArray(3, sizeof(VolumetricSettings) / sizeof(uint32_t), &baseSettings);
-		computeContext.SetConstantArray(7, sizeof(VolumetricWorld) / sizeof(uint32_t), &worldSettings);
+		computeContext.SetConstantArray(6, sizeof(VolumetricWorld) / sizeof(uint32_t), &worldSettings);
 
-		//Bind volumes
-		computeContext.SetDynamicDescriptor(4, 0, m_volumeBuffer.GetSRV());
 		//  Noise textures
-		computeContext.SetDynamicDescriptor(5, 0, m_noise.GetNoise().GetSRV());
+		computeContext.SetDynamicDescriptor(4, 0, m_noise.GetNoise().GetSRV());
 		//Volumes texture
-		computeContext.SetDynamicDescriptor(6, 0, m_grid.GetDensityField().GetSRV());
+		computeContext.SetDynamicDescriptor(5, 0, m_grid.GetDensityField().GetSRV());
 
 		//End call
 		computeContext.Dispatch(ceil(screenX / 32.f), ceil(screenY / 32.f), 1);

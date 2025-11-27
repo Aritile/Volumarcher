@@ -47,7 +47,7 @@ namespace Volumarcher
 	public:
 		VolumetricContext() = delete;
 
-		explicit VolumetricContext(Volume _volumes[VOLUME_AMOUNT], CameraSettings _cameraSettings,
+		explicit VolumetricContext(CameraSettings _cameraSettings,
 		                           Settings _settings = {});
 
 
@@ -70,7 +70,6 @@ namespace Volumarcher
 
 		ComputePSO m_computePSO;
 		RootSignature m_rs;
-		StructuredBuffer m_volumeBuffer;
 		CameraSettings m_cameraSettings;
 		Settings m_settings;
 		glm::vec3 m_gridOrigin{0.f};
