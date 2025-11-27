@@ -107,8 +107,64 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>zlibstatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Debug'">zlibstatic.lib;deflate.lib;
+hwloc.lib;
+Iex-3_4_d.lib;
+IlmThread-3_4_d.lib;
+Imath-3_2_d.lib;
+lz4d.lib;
+lzma.lib;
+OpenEXR-3_4_d.lib;
+OpenEXRCore-3_4_d.lib;
+OpenEXRUtil-3_4_d.lib;
+openjph.0.25d.lib;
+openvdb.lib;
+snappy.lib;
+tbb12_debug.lib;
+tbbmalloc_debug.lib;
+tbbmalloc_proxy_debug.lib;
+zlibd.lib;
+zstd.lib;
+libnoise.lib;
+blosc.lib;
+boost_atomic-vc143-mt-gd-x64-1_89.lib;
+boost_chrono-vc143-mt-gd-x64-1_89.lib;
+boost_container-vc143-mt-gd-x64-1_89.lib;
+boost_date_time-vc143-mt-gd-x64-1_89.lib;
+boost_iostreams-vc143-mt-gd-x64-1_89.lib;
+boost_random-vc143-mt-gd-x64-1_89.lib;
+boost_thread-vc143-mt-gd-x64-1_89.lib;
+bz2d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Release'">zlibstatic.lib;OpenEXRUtil-3_4.lib;
+openjph.0.25.lib;
+openvdb.lib;
+snappy.lib;
+tbb12.lib;
+tbbmalloc.lib;
+tbbmalloc_proxy.lib;
+zlib.lib;
+zstd.lib;
+blosc.lib;
+boost_atomic-vc143-mt-x64-1_89.lib;
+boost_chrono-vc143-mt-x64-1_89.lib;
+boost_container-vc143-mt-x64-1_89.lib;
+boost_date_time-vc143-mt-x64-1_89.lib;
+boost_iostreams-vc143-mt-x64-1_89.lib;
+boost_random-vc143-mt-x64-1_89.lib;
+boost_thread-vc143-mt-x64-1_89.lib;
+bz2.lib;
+deflate.lib;
+hwloc.lib;
+Iex-3_4.lib;
+IlmThread-3_4.lib;
+Imath-3_2.lib;
+libnoise.lib;
+lz4.lib;
+lzma.lib;
+OpenEXR-3_4.lib;
+OpenEXRCore-3_4.lib%(AdditionalDependencies)</AdditionalDependencies>
+
     </Link>
     <ClCompile>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
@@ -119,6 +175,12 @@
     <ClCompile>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
     </ClCompile>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\$(Configuration)\*" "$(TargetDir)"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\$(Configuration)\*" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets" Condition="Exists('$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets')" />

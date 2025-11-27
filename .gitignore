@@ -11,6 +11,7 @@
 *.lastbuildstate
 *.ilk
 *.log
+*.pdb
 * - Copy*.*
 Build_VS*
 Build

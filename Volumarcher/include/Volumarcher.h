@@ -1,4 +1,10 @@
 #pragma once
+#include "CloudNoise.h"
+#include "CloudNoise.h"
+#include "CloudNoise.h"
+#include "CloudNoise.h"
+#include "CloudNoise.h"
+#include "CloudNoise.h"
 #include "../MiniEngine/Core/CommandContext.h"
 #include "../MiniEngine/Core/RootSignature.h"
 #include "../MiniEngine/Core/PipelineState.h"
@@ -11,6 +17,7 @@
 
 #include "CloudNoise.h"
 #include "ImageNoise.h"
+#include "VoxelWorld.h"
 
 namespace Volumarcher
 {
@@ -27,8 +34,8 @@ namespace Volumarcher
 	struct Settings
 	{
 		int baseSampleCount = 128;
-		int lightingSampleCount = 10;
-		int ambientSampleCount = 3;
+		int lightingSampleCount = 16;
+		int ambientSampleCount = 5;
 	};
 
 	class VolumetricContext
@@ -40,11 +47,10 @@ namespace Volumarcher
 		                           Settings _settings = {});
 
 
-		//void SetVolumes(Volume _volumes[VOLUME_AMOUNT]);
+		void LoadGrid(const std::string& _vdb, glm::vec3 _gridScale = glm::vec3(1.f),
+		              glm::vec3 _origin = glm::vec3(0.f));
 
-		void SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size, glm::vec3 _worldSpaceSize);
-
-		Settings GetSettings() const { return m_settings; }
+		[[nodiscard]] Settings GetSettings() const { return m_settings; }
 		void SetSettings(const Settings _volumetricSettings) { m_settings = _volumetricSettings; }
 
 		void Update(float _deltaTime);
@@ -55,16 +61,16 @@ namespace Volumarcher
 
 	private:
 		//TODO: Make this user specified 
+		VoxelWorld m_grid;
 		ImageNoise m_noise;
-
-		Texture m_cloudVolumeVoxels;
 
 		ComputePSO m_computePSO;
 		RootSignature m_rs;
 		StructuredBuffer m_volumeBuffer;
 		CameraSettings m_cameraSettings;
 		Settings m_settings;
+		glm::vec3 m_gridOrigin{0.f};
+		glm::vec3 m_gridScale{0.f};
 		float m_time{0.f};
-		glm::vec3 m_worldSize{1.f};
 	};
 }

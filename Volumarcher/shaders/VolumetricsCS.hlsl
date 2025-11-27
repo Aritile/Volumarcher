@@ -33,12 +33,12 @@ Texture3D<float> voxelVolume : register(t3);
 static const float FAR_PLANE = 6;
 
 //TODO: Not hardcode this
-static const float3 SUN_DIR = normalize(float3(0.4, -1, 0.4));
-static const float3 SUN_LIGHT = float3(0.996, 0.9, 0.8) * 10;
+static const float3 SUN_DIR = normalize(float3(-0.5, -1, -0.5));
+static const float3 SUN_LIGHT = float3(0.996, 0.9, 0.8) * 20;
 
-static const float3 BACKGROUND_COLOR_UP = float3(0.467, 0.529, 0.671);
+static const float3 BACKGROUND_COLOR_UP = float3(0.467, 0.529, 0.871);
 static const float3 BACKGROUND_COLOR_DOWN = float3(0.694, 0.596, 0.467) * 0.5;
-static const float3 AMBIENT_COLOR = float3(0.467, 0.529, 0.671);
+static const float3 AMBIENT_COLOR = float3(0.467, 0.529, 0.871)*PI;
 
 static const float ECCENTRICITY = 0.2;
 
@@ -67,35 +67,40 @@ float SampleProfile(float3 _sample)
     float3 sample = (_sample - renderConstants.origin) * renderConstants.worldSize;
     if (any(sample > 1.0) || any(sample < 0.0))
         return 0.0;
-    return voxelVolume.SampleLevel(profileSampler, sample, 0);
+    return voxelVolume.SampleLevel(profileSampler, sample, 0)*2;
 }
 
-float SampleDensity(float3 _sample, float _profile)
+float UpresProfile(float3 _sample, float _profile)
 {
     float density = _profile;
-    float scale = 0.4;
+    float scale = 1.0;
     float3 noiseTexSample = float3(_sample) * scale;
     //Wind
     noiseTexSample += worldConstants.wind * constants.time;
 
-    float noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0).a);
-    density = saturate(Remap(density, noise
-               , 1, 0, 1));
+    float4 noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, 0));
 
-    return density;
+    float billowType = pow(_profile, 0.25); // Pow to change the gradient to be more towards high freq,     could be an artistic setting
+    float billowNoise = lerp(noise.b * 0.3, noise.a * 0.3, billowType);
+
+    float finalNoise = billowNoise; // TODO (maybe): allow artists to define billow vs wispy
+
+    density = saturate(Remap(density, finalNoise
+               , 1, 0, 1));
+    return density*5;
+
 }
 
 //TODO: This should be precomputed
 float GetSummedAmbientDensity(float3 _sample)
 {
-    //TODO shaped: Bad step size that assumes 1 sphere
-    float stepSize = sqrt(volumes[0].squaredRad) / renderConstants.ambientSampleCount;
+    float stepSize = (FAR_PLANE * 0.2) / renderConstants.ambientSampleCount;
     float density = 0;
     for (int i = 0; i < renderConstants.ambientSampleCount; ++i)
     {
         float3 sample = _sample + float3(0, 1, 0) * stepSize * i;
 
-        density += SampleDensity(sample, SampleProfile(sample)) * stepSize;
+        density += UpresProfile(sample, SampleProfile(sample)) * stepSize;
     }
     return density;
 }
@@ -111,7 +116,7 @@ float GetDirectLightDensitySamples(float3 _sample)
     {
         float3 sample = _sample + -SUN_DIR * (i * stepSize);
         float profile = SampleProfile(sample);
-        totalDensity += SampleDensity(sample, profile) * stepSize;
+        totalDensity += UpresProfile(sample, profile) * stepSize;
     }
     return totalDensity;
 }
@@ -173,11 +178,12 @@ void main(uint3 DTid : SV_DispatchThreadID)
         float profile = SampleProfile(sample);
 
     	//Density with high detail noise
-        sampleDensity += SampleDensity(sample, profile);
+        sampleDensity += UpresProfile(sample, profile);
         if (sampleDensity == 0)
             continue;
+
         //Ambient approximation, gives popcorn effect
-        sampleLight += saturate((1 - profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR * PI);
+        sampleLight += saturate((1-profile) * exp(-GetSummedAmbientDensity(sample))) * (AMBIENT_COLOR);
         float lightAngle = dot(rayDir, -SUN_DIR);
         float inSunLightDensitySamples = GetDirectLightDensitySamples(sample);
         float lightVolume = InScatteringApprox(profile, lightAngle, inSunLightDensitySamples);
@@ -192,6 +198,4 @@ void main(uint3 DTid : SV_DispatchThreadID)
     light += transmittance * background;
 
     outputTexture[DTid.xy] = float4(light, 1);
-
-
 }

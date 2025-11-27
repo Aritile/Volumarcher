@@ -139,11 +139,11 @@ namespace Volumarcher
 	};
 
 
-
 #include "CompiledShaders/VolumetricsCS.h"
 
 	VolumetricContext::VolumetricContext(Volume _volumes[VOLUME_AMOUNT], CameraSettings _cameraSettings,
 	                                     Settings _settings) :
+		m_grid(),
 		m_noise(NOISE_TEXTURE),
 		m_cameraSettings(_cameraSettings),
 		m_settings(_settings)
@@ -166,7 +166,7 @@ namespace Volumarcher
 
 		//Linear wrap sampler
 		D3D12_SAMPLER_DESC noiseSamplerDesc{
-			D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR,
+			D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR,
 			D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, 0, 0, D3D12_COMPARISON_FUNC_NONE,
 			{0, 0, 0, 1}, 0, 0
 		};
@@ -188,12 +188,14 @@ namespace Volumarcher
 		m_volumeBuffer.Create(L"Volume buffer", VOLUME_AMOUNT, sizeof(Volume), &_volumes[0]);
 	}
 
-	void VolumetricContext::SetVolumeGrid(std::vector<float> _densityGrid, glm::ivec3 _size, glm::vec3 _worldSpaceSize)
+	void VolumetricContext::LoadGrid(const std::string& _vdb, glm::vec3 _gridScale, glm::vec3 _origin)
 	{
-		m_cloudVolumeVoxels.Create3D(_size.x * sizeof(float), _size.x, _size.y, _size.z, DXGI_FORMAT_R32_FLOAT,
-		                             _densityGrid.data());
-		m_worldSize = _worldSpaceSize;
+		m_grid.LoadVDB(_vdb);
+		m_gridOrigin = _origin;
+		m_gridScale = normalize(glm::vec3(m_grid.GetSize())) * 1.f / _gridScale;
+		//m_gridScale = _gridScale;
 	}
+
 
 	void VolumetricContext::Update(const float _deltaTime)
 	{
@@ -201,11 +203,15 @@ namespace Volumarcher
 	}
 
 
-	
 	void VolumetricContext::Render(ColorBuffer _outputBuffer, D3D12_RESOURCE_STATES _outputBufferState,
 	                               DepthBuffer _inputDepth, glm::vec3 _camPos,
 	                               glm::quat _camRot)
 	{
+		if (!m_grid.isLoaded())
+		{
+			Utility::Printf("ERROR: Volumarcher has no grid loaded, use LoadGrid()");
+		}
+
 		ComputeContext& computeContext = ComputeContext::Begin(L"Volumetric Pass");
 		computeContext.SetPipelineState(m_computePSO);
 		computeContext.SetRootSignature(m_rs);
@@ -222,13 +228,15 @@ namespace Volumarcher
 			_camPos, m_time, camDir
 		};
 		VolumetricSettings baseSettings{
-			glm::vec3(0, 0, 0), m_settings.baseSampleCount, m_worldSize, m_settings.lightingSampleCount,
+			m_gridOrigin, m_settings.baseSampleCount,
+			m_gridScale,
+			m_settings.lightingSampleCount,
 			m_settings.ambientSampleCount,
 			screenX, screenY, m_cameraSettings.zNear, m_cameraSettings.zFar,
 			tan(glm::radians(m_cameraSettings.vFov) / 2.f)
 		};
 		VolumetricWorld worldSettings{
-			glm::vec3(1, 0, 0.5) * 0.1f
+			glm::vec3(1, 0, 0.5) * 0.05f
 		};
 
 		computeContext.SetConstantArray(2, sizeof(VolumetricDynamics) / sizeof(uint32_t), &cameraSettings);
@@ -242,7 +250,7 @@ namespace Volumarcher
 		//  Noise textures
 		computeContext.SetDynamicDescriptor(5, 0, m_noise.GetNoise().GetSRV());
 		//Volumes texture
-		computeContext.SetDynamicDescriptor(6, 0, m_cloudVolumeVoxels.GetSRV());
+		computeContext.SetDynamicDescriptor(6, 0, m_grid.GetDensityField().GetSRV());
 
 		//End call
 		computeContext.Dispatch(ceil(screenX / 32.f), ceil(screenY / 32.f), 1);
