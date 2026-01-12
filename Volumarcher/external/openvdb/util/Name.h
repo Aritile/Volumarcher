@@ -96,7 +96,11 @@ inline void trim(std::string& s)
 inline void to_lower(std::string& s)
 {
     std::transform(s.begin(), s.end(), s.begin(),
+<<<<<<< HEAD
         [](auto c){ return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); });
+=======
+        [](auto c){ return std::tolower(c); });
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 }
 
 } // util

@@ -5,8 +5,12 @@
 #define SDF_ENABLED 1
 #define JITTER_SAMPLE 1
 
+<<<<<<< HEAD
 
 RWTexture2D<float4> historyBuffer : register(u0);
+=======
+RWTexture2D<float4> outputTexture : register(u0);
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 Texture2D<float> sceneDepth : register(t0);
 
 cbuffer RootConstants : register(b0)
@@ -24,6 +28,7 @@ cbuffer WorldSettings : register(b2)
     VolumetricWorld worldConstants;
 }
 
+<<<<<<< HEAD
 StructuredBuffer<LightSource> lights : register(t7);
 
 
@@ -58,6 +63,36 @@ static const float directAdaptiveStepDistance = DIRECTADAPTIVESTEP_OVER_DISTANCE
 static const float DIRECTMINSTEP_SCALE = 0.075;
 
 float SampleSDF(float3 _sample)
+=======
+
+StructuredBuffer<Volume> volumes : register(t1);
+
+Texture3D<float4> billowNoise : register(t2);
+SamplerState noiseSampler : register(s0);
+SamplerState profileSampler : register(s1);
+
+Texture3D<float> voxelVolume : register(t3);
+
+
+static const float FAR_PLANE = 6;
+
+//TODO: Not hardcode this
+static const float3 SUN_DIR = normalize(float3(-0.5, -1, -0.5));
+static const float3 SUN_LIGHT = float3(0.996, 0.8, 0.7) * 10;
+
+static const float3 BACKGROUND_COLOR_UP = float3(0.167, 0.229, 0.971);
+static const float3 BACKGROUND_COLOR_DOWN = float3(0.467, 0.529, 0.971);
+static const float3 AMBIENT_COLOR = lerp(BACKGROUND_COLOR_UP, BACKGROUND_COLOR_DOWN, 0.5) * PI;
+
+static const float ECCENTRICITY = 0.2;
+
+
+static const float DEG_TO_RAD = 0.01745;
+
+
+//Remap from https://stackoverflow.com/a/3451607
+float Remap(float value, float low1, float high1, float low2, float high2)
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 {
     float3 worldPos = _sample + float3(worldConstants.offsetX, 0, worldConstants.offsetZ);
 
@@ -82,6 +117,7 @@ float SampleSDF(float3 _sample)
 //Sample dimensional profile
 float SampleProfile(float3 _sample)
 {
+<<<<<<< HEAD
     float3 worldPos = _sample + float3(worldConstants.offsetX, 0, worldConstants.offsetZ);
     int2 sdftile = floor((worldPos.xz - renderConstants.sdfGridOrigin.xz) * renderConstants.sdfTextureScale.xz);
 	worldPos.xz += sdftile * (1/renderConstants.densityTextureScale.xz - 1/renderConstants.sdfTextureScale.xz);
@@ -91,11 +127,27 @@ float SampleProfile(float3 _sample)
         return 0.0;
 	float profile = voxelVolumeData.SampleLevel(profileSampler, sample, 0).r;
     return profile;
+=======
+    float num = 1.0 - inG * inG;
+    float denom = 1.0 + inG * inG - 2.0 * inG * inCosAngle;
+    float rsqrt_denom = rsqrt(denom);
+    return num * rsqrt_denom * rsqrt_denom * rsqrt_denom * (1.0 / (4.0 * PI));
+}
+
+//Sample dimensional profile
+float SampleProfile(float3 _sample)
+{
+    float3 sample = (_sample - renderConstants.origin) * renderConstants.worldSize;
+    if (any(sample > 1.0) || any(sample < 0.0))
+        return 0.0;
+    return voxelVolume.SampleLevel(profileSampler, sample, 0);
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 }
 
 float UpresProfile(float3 _sample, float _profile, float mip = 0)
 {
     float density = _profile;
+<<<<<<< HEAD
     float scale = renderConstants.noiseScale;
 
     float3 noiseTexSample = float3(_sample) * scale;
@@ -107,15 +159,31 @@ float UpresProfile(float3 _sample, float _profile, float mip = 0)
 
     float billowType = pow(_profile, 0.25); // Pow to change the gradient to be more towards high freq,     could be an artistic setting
     float billowNoise = lerp(noise.r * 0.3, noise.g * 0.3, billowType);
+=======
+    float scale = 1.0;
+    float3 noiseTexSample = float3(_sample) * scale;
+    //Wind
+    noiseTexSample += worldConstants.wind * constants.time;
+
+    float4 noise = saturate(billowNoise.SampleLevel(noiseSampler, noiseTexSample, mip));
+
+    float billowType = pow(_profile, 0.25); // Pow to change the gradient to be more towards high freq,     could be an artistic setting
+    float billowNoise = lerp(noise.b * 0.3, noise.a * 0.3, billowType);
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 
     float finalNoise = billowNoise; // TODO (maybe): allow artists to define billow vs wispy
 
     density = saturate(Remap(density, finalNoise
+<<<<<<< HEAD
                , 1.0, 0, 1));
+=======
+               , 1, 0, 1));
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
     return density * worldConstants.globalDensityScale;
 
 }
 
+<<<<<<< HEAD
 
 
 //TODO: This should be precomputed
@@ -139,6 +207,20 @@ float GetSummedAmbientDensity(float3 _sample, float _mip)
     //    density += UpresProfile(sample, SampleProfile(sample), _mip) * stepSize;
     //}
     return (cacheDensity);
+=======
+//TODO: This should be precomputed
+float GetSummedAmbientDensity(float3 _sample, float _mip)
+{
+    float stepSize = (FAR_PLANE * 0.2) / renderConstants.ambientSampleCount;
+    float density = 0;
+    for (int i = 0; i < renderConstants.ambientSampleCount; ++i)
+    {
+        float3 sample = _sample + float3(0, 1, 0) * stepSize * i;
+
+        density += UpresProfile(sample, SampleProfile(sample), _mip) * stepSize;
+    }
+    return density;
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 }
 
 float2 WorldToScreen(float3 _world, float3 _camDir, float3 _camPos, float _fovAdjust, float _aspect)
@@ -148,6 +230,7 @@ float2 WorldToScreen(float3 _world, float3 _camDir, float3 _camPos, float _fovAd
     float3 camRight = normalize(cross(_camDir, float3(0, 1, 0)));
     float3 camUp = normalize(cross(camRight, _camDir));
 
+<<<<<<< HEAD
     float x = dot(view, camRight);
     float y = dot(view, camUp);
     float z = dot(view, _camDir);
@@ -236,6 +319,30 @@ float3 SampleLocalLight(float3 _sample, float _density)
 
 
 [numthreads(VOLUMETRIC_PASS_GROUP_SIZE, VOLUMETRIC_PASS_GROUP_SIZE, 1)]
+=======
+float GetDirectLightDensitySamples(float3 _sample, float _mip)
+{
+
+    float totalDensity = 0;
+    float stepSize = FAR_PLANE * 0.25 / renderConstants.directLightSampleCount;
+    for (int i = 0; i < renderConstants.directLightSampleCount; ++i)
+    {
+        float3 sample = _sample + -SUN_DIR * (i * stepSize);
+        float profile = SampleProfile(sample);
+        totalDensity += UpresProfile(sample, profile, _mip) * stepSize;
+    }
+    return totalDensity;
+}
+
+float InScatteringApprox(float _baseDimensionalProfile, float _sun_dot, float _sunDensitySamples)
+{
+    return exp(-_sunDensitySamples * Remap(_sun_dot, 0.0, 0.9, 0.25, Remap(_baseDimensionalProfile, 1.0, 0.0, 0.05, 0.25)));
+}
+
+
+
+[numthreads(32, 32, 1)]
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 void main(uint3 DTid : SV_DispatchThreadID)
 {
     if (DTid.x > renderConstants.screenResX || DTid.y > renderConstants.screenResY)
@@ -244,6 +351,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float2 screenUV = (float2(DTid.xy) + 0.5) / float2(renderConstants.screenResX, renderConstants.screenResY);
 
     //Get depth
+<<<<<<< HEAD
     float screenDepth = sceneDepth.SampleLevel(profileSampler, screenUV, 0);
 
     //Avoid halo on lower resolution
@@ -277,6 +385,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
     if (linearDepth >= renderConstants.zFar)
         linearDepth = 10e99;
     float farPlane = renderConstants.targetRenderDistance;
+=======
+    float screenDepth = sceneDepth.SampleLevel(noiseSampler, screenUV, 0);
+    float linearDepth = renderConstants.zNear * renderConstants.zFar / (renderConstants.zFar + (1 - screenDepth) * (renderConstants.zNear - renderConstants.zFar));
+    float farPlane = min(linearDepth, FAR_PLANE);
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 	
 	//Get screen ray
     float aspect = float(renderConstants.screenResX) / float(renderConstants.screenResY);
@@ -292,6 +405,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float3 rayOrigin = constants.camPos;
     float3 rayDir = mul(normalize(float3(rayX, rayY, 1)), camMat);
 
+<<<<<<< HEAD
 	//Set to volume
     float3 minBound = renderConstants.densityGridOrigin;
     float3 maxBound = minBound + 1 / (renderConstants.densityTextureScale);
@@ -441,10 +555,63 @@ void main(uint3 DTid : SV_DispatchThreadID)
         }
         light += sampleLight * transmittance * stepSize * sampleDensity * cloudColor;
 		
+=======
+    //Background (maybe temp or optional if scene already has skybox)
+    float3 background{0, 0, 0};
+    if (screenDepth > 0)
+        background = outputTexture[DTid.xy];
+    else
+    {
+        background = lerp(BACKGROUND_COLOR_DOWN, BACKGROUND_COLOR_UP, saturate((rayDir.y * 0.5) + 0.55));
+        float sunDot = saturate(dot(rayDir, -SUN_DIR));
+        float sunAmount = smoothstep(0.99, 1.0, sunDot);
+        background += SUN_LIGHT * (sunAmount + (sunDot * sunDot)*0.05);
+    }
+
+    static float stepSize = farPlane / renderConstants.baseSampleCount;
+
+    float3 light = 0;
+    float totalDensity = 0;
+
+    static const float TRANSMITTANCE_CUTOFF = 0.005;
+
+    //Ray marching steps
+    for (int i = 0; i < renderConstants.baseSampleCount; ++i)
+    {
+        float dist = (i * stepSize);
+        
+        float3 sample = rayOrigin + rayDir * dist;
+        float3 sampleLight = 0;
+
+
+        float mip = log2(1.0 + (dist * 150.0)); // TODO: Mip bias as var
+		
+
+        //Base dimensional profile  (profile goes from 1 - 0     <0 being outside the cloud)
+        float profile = SampleProfile(sample);
+    	//Density with high detail noise
+        float sampleDensity = UpresProfile(sample, profile, mip);
+        if (sampleDensity == 0)
+            continue;
+
+
+        //Ambient approximation, gives popcorn effect
+        sampleLight += saturate(pow(profile, 0.5) * exp(-GetSummedAmbientDensity(sample, mip))) * (AMBIENT_COLOR);
+        float lightAngle = dot(rayDir, -SUN_DIR);
+        float inSunLightDensitySamples = GetDirectLightDensitySamples(sample, mip);
+        float lightVolume = InScatteringApprox(1 - profile, lightAngle, inSunLightDensitySamples);
+        sampleLight += lightVolume * SUN_LIGHT * HenyeyGreensteinPhase(lightAngle, ECCENTRICITY);
+
+        totalDensity += sampleDensity * stepSize;
+        float transmittance = exp(-totalDensity);
+        light += sampleLight * transmittance * stepSize * sampleDensity;
+
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
         if (transmittance < TRANSMITTANCE_CUTOFF)
         {
             break;
         }
+<<<<<<< HEAD
 #if SDF_ENABLED == 1
         stepSize = adaptiveSize;
 #endif
@@ -511,4 +678,14 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
 
     historyBuffer[DTid.xy] = result;
+=======
+    }
+    float transmittance = exp(-totalDensity);
+    if (transmittance < TRANSMITTANCE_CUTOFF)
+        transmittance = 0;
+
+    light += transmittance * background;
+
+    outputTexture[DTid.xy] = float4(light, 1);
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 }

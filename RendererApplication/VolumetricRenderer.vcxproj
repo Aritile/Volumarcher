@@ -36,8 +36,13 @@
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+<<<<<<< HEAD
     <Import Project="$(SolutionDir)\MiniEngine\PropertySheets\Build.props" />
     <Import Project="$(SolutionDir)\MiniEngine\PropertySheets\Desktop.props" />
+=======
+    <Import Project="$(SolutionDir)\PropertySheets\Build.props" />
+    <Import Project="$(SolutionDir)\PropertySheets\Desktop.props" />
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -57,7 +62,11 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile />
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
+<<<<<<< HEAD
       <AdditionalIncludeDirectories>$(SolutionDir)\MiniEngine\Model;$(SolutionDir)\MiniEngine\Core;..\Volumarcher\include;..\Volumarcher\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+=======
+      <AdditionalIncludeDirectories>$(SolutionDir)\MiniEngine\Core;..\Volumarcher\include;..\Volumarcher\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
     </ClCompile>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/nodefaultlib:MSVCRT %(AdditionalOptions)</AdditionalOptions>
@@ -96,12 +105,29 @@
     <Image Include="WideLogo.png" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="PixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="VertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemDefinitionGroup>
     <Link>
+<<<<<<< HEAD
       <AdditionalLibraryDirectories>$(SolutionDir)\Packages\directxmesh_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Release;$(SolutionDir)\Packages\directxtex_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Release;$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories Condition="'$(Configuration)'=='Debug'">$(SolutionDir)\Packages\directxmesh_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Debug;$(SolutionDir)\Packages\directxtex_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Debug;$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies Condition="'$(Configuration)'=='Debug'">zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;deflate.lib;
+=======
+      <AdditionalLibraryDirectories>$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Debug'">zlibstatic.lib;deflate.lib;
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 hwloc.lib;
 Iex-3_4_d.lib;
 IlmThread-3_4_d.lib;
@@ -129,6 +155,7 @@ boost_iostreams-vc143-mt-gd-x64-1_89.lib;
 boost_random-vc143-mt-gd-x64-1_89.lib;
 boost_thread-vc143-mt-gd-x64-1_89.lib;
 bz2d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+<<<<<<< HEAD
       <AdditionalDependencies Condition="'$(Configuration)'=='Release'">zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;OpenEXRUtil-3_4.lib;
 openjph.0.25.lib;
 openvdb.lib;
@@ -158,6 +185,9 @@ lzma.lib;
 OpenEXR-3_4.lib;
 OpenEXRCore-3_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalDependencies Condition="'$(Configuration)'=='Profile'">zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;OpenEXRUtil-3_4.lib;
+=======
+      <AdditionalDependencies Condition="'$(Configuration)'=='Release'">zlibstatic.lib;OpenEXRUtil-3_4.lib;
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 openjph.0.25.lib;
 openvdb.lib;
 snappy.lib;
@@ -199,6 +229,7 @@ OpenEXRCore-3_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdcpp17</LanguageStandard>
     </ClCompile>
     <PostBuildEvent>
+<<<<<<< HEAD
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\$(Configuration)\*" "$(TargetDir)"
 xcopy /Y /E "$(Solutiondir)\assets\*" "$(TargetDir)\assets\"</Command>
     </PostBuildEvent>
@@ -213,6 +244,13 @@ xcopy /Y /E "$(Solutiondir)\assets\*" "$(TargetDir)\assets\"</Command>
     <FxCompile>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)\Build\$(Platform)\$(Configuration)\Output\$(ProjectName)\CompiledShaders\%(Filename).h</HeaderFileOutput>
     </FxCompile>
+=======
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\$(Configuration)\*" "$(TargetDir)"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\$(Configuration)\*" "$(TargetDir)"</Command>
+    </PostBuildEvent>
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
   </ItemDefinitionGroup>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets" Condition="Exists('$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets')" />

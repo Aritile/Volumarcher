@@ -32,8 +32,12 @@ public:
                        const void* InitialData, unsigned int mipLevels = 1, D3D12_RESOURCE_FLAGS flags =
 	                       D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, size_t slicePitchBytes = -1);
     void Create3D(size_t RowPitchBytes, size_t Width, size_t Height, size_t Depth, DXGI_FORMAT Format,
+<<<<<<< HEAD
                   const void* InitialData, unsigned int mipLevels = 1, D3D12_RESOURCE_FLAGS flags =
 	                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, size_t slicePitchBytes = -1);
+=======
+                  const void* InitialData, unsigned int mipLevels = 1);
+>>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 
     void CreateCube(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitialData);
 
