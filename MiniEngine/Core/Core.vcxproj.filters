@@ -635,9 +635,6 @@
     <None Include="Shaders\MotionBlurRS.hlsli">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="packages.config">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\ParticleRS.hlsli">
       <Filter>Shaders</Filter>
     </None>

@@ -16,148 +16,164 @@
 
 #if defined( __cplusplus )
 
-struct CD3DX12_DEFAULT {};
+struct CD3DX12_DEFAULT
+{
+};
 extern const DECLSPEC_SELECTANY CD3DX12_DEFAULT D3D12_DEFAULT;
 
 //------------------------------------------------------------------------------------------------
-inline bool operator==( const D3D12_VIEWPORT& l, const D3D12_VIEWPORT& r ) noexcept
+inline bool operator==(const D3D12_VIEWPORT& l, const D3D12_VIEWPORT& r) noexcept
 {
-    return l.TopLeftX == r.TopLeftX && l.TopLeftY == r.TopLeftY && l.Width == r.Width &&
-        l.Height == r.Height && l.MinDepth == r.MinDepth && l.MaxDepth == r.MaxDepth;
+	return l.TopLeftX == r.TopLeftX && l.TopLeftY == r.TopLeftY && l.Width == r.Width &&
+		l.Height == r.Height && l.MinDepth == r.MinDepth && l.MaxDepth == r.MaxDepth;
 }
 
 //------------------------------------------------------------------------------------------------
-inline bool operator!=( const D3D12_VIEWPORT& l, const D3D12_VIEWPORT& r ) noexcept
-{ return !( l == r ); }
+inline bool operator!=(const D3D12_VIEWPORT& l, const D3D12_VIEWPORT& r) noexcept
+{
+	return !(l == r);
+}
 
 //------------------------------------------------------------------------------------------------
 struct CD3DX12_RECT : public D3D12_RECT
 {
-    CD3DX12_RECT() = default;
-    explicit CD3DX12_RECT( const D3D12_RECT& o ) noexcept :
-        D3D12_RECT( o )
-    {}
-    explicit CD3DX12_RECT(
-        LONG Left,
-        LONG Top,
-        LONG Right,
-        LONG Bottom ) noexcept
-    {
-        left = Left;
-        top = Top;
-        right = Right;
-        bottom = Bottom;
-    }
+	CD3DX12_RECT() = default;
+
+	explicit CD3DX12_RECT(const D3D12_RECT& o) noexcept :
+		D3D12_RECT(o)
+	{
+	}
+
+	explicit CD3DX12_RECT(
+		LONG Left,
+		LONG Top,
+		LONG Right,
+		LONG Bottom) noexcept
+	{
+		left = Left;
+		top = Top;
+		right = Right;
+		bottom = Bottom;
+	}
 };
 
 //------------------------------------------------------------------------------------------------
 struct CD3DX12_VIEWPORT : public D3D12_VIEWPORT
 {
-    CD3DX12_VIEWPORT() = default;
-    explicit CD3DX12_VIEWPORT( const D3D12_VIEWPORT& o ) noexcept :
-        D3D12_VIEWPORT( o )
-    {}
-    explicit CD3DX12_VIEWPORT(
-        FLOAT topLeftX,
-        FLOAT topLeftY,
-        FLOAT width,
-        FLOAT height,
-        FLOAT minDepth = D3D12_MIN_DEPTH,
-        FLOAT maxDepth = D3D12_MAX_DEPTH ) noexcept
-    {
-        TopLeftX = topLeftX;
-        TopLeftY = topLeftY;
-        Width = width;
-        Height = height;
-        MinDepth = minDepth;
-        MaxDepth = maxDepth;
-    }
-    explicit CD3DX12_VIEWPORT(
-        _In_ ID3D12Resource* pResource,
-        UINT mipSlice = 0,
-        FLOAT topLeftX = 0.0f,
-        FLOAT topLeftY = 0.0f,
-        FLOAT minDepth = D3D12_MIN_DEPTH,
-        FLOAT maxDepth = D3D12_MAX_DEPTH ) noexcept
-    {
-        auto Desc = pResource->GetDesc();
-        const UINT64 SubresourceWidth = Desc.Width >> mipSlice;
-        const UINT64 SubresourceHeight = Desc.Height >> mipSlice;
-        switch (Desc.Dimension)
-        {
-        case D3D12_RESOURCE_DIMENSION_BUFFER:
-            TopLeftX = topLeftX;
-            TopLeftY = 0.0f;
-            Width = float(Desc.Width) - topLeftX;
-            Height = 1.0f;
-            break;
-        case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
-            TopLeftX = topLeftX;
-            TopLeftY = 0.0f;
-            Width = (SubresourceWidth ? float(SubresourceWidth) : 1.0f) - topLeftX;
-            Height = 1.0f;
-            break;
-        case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
-        case D3D12_RESOURCE_DIMENSION_TEXTURE3D:
-            TopLeftX = topLeftX;
-            TopLeftY = topLeftY;
-            Width = (SubresourceWidth ? float(SubresourceWidth) : 1.0f) - topLeftX;
-            Height = (SubresourceHeight ? float(SubresourceHeight) : 1.0f) - topLeftY;
-            break;
-        default: break;
-        }
+	CD3DX12_VIEWPORT() = default;
 
-        MinDepth = minDepth;
-        MaxDepth = maxDepth;
-    }
+	explicit CD3DX12_VIEWPORT(const D3D12_VIEWPORT& o) noexcept :
+		D3D12_VIEWPORT(o)
+	{
+	}
+
+	explicit CD3DX12_VIEWPORT(
+		FLOAT topLeftX,
+		FLOAT topLeftY,
+		FLOAT width,
+		FLOAT height,
+		FLOAT minDepth = D3D12_MIN_DEPTH,
+		FLOAT maxDepth = D3D12_MAX_DEPTH) noexcept
+	{
+		TopLeftX = topLeftX;
+		TopLeftY = topLeftY;
+		Width = width;
+		Height = height;
+		MinDepth = minDepth;
+		MaxDepth = maxDepth;
+	}
+
+	explicit CD3DX12_VIEWPORT(
+		_In_ ID3D12Resource* pResource,
+		UINT mipSlice = 0,
+		FLOAT topLeftX = 0.0f,
+		FLOAT topLeftY = 0.0f,
+		FLOAT minDepth = D3D12_MIN_DEPTH,
+		FLOAT maxDepth = D3D12_MAX_DEPTH) noexcept
+	{
+		auto Desc = pResource->GetDesc();
+		const UINT64 SubresourceWidth = Desc.Width >> mipSlice;
+		const UINT64 SubresourceHeight = Desc.Height >> mipSlice;
+		switch (Desc.Dimension)
+		{
+		case D3D12_RESOURCE_DIMENSION_BUFFER:
+			TopLeftX = topLeftX;
+			TopLeftY = 0.0f;
+			Width = float(Desc.Width) - topLeftX;
+			Height = 1.0f;
+			break;
+		case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
+			TopLeftX = topLeftX;
+			TopLeftY = 0.0f;
+			Width = (SubresourceWidth ? float(SubresourceWidth) : 1.0f) - topLeftX;
+			Height = 1.0f;
+			break;
+		case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
+		case D3D12_RESOURCE_DIMENSION_TEXTURE3D:
+			TopLeftX = topLeftX;
+			TopLeftY = topLeftY;
+			Width = (SubresourceWidth ? float(SubresourceWidth) : 1.0f) - topLeftX;
+			Height = (SubresourceHeight ? float(SubresourceHeight) : 1.0f) - topLeftY;
+			break;
+		default: break;
+		}
+
+		MinDepth = minDepth;
+		MaxDepth = maxDepth;
+	}
 };
 
 //------------------------------------------------------------------------------------------------
 struct CD3DX12_BOX : public D3D12_BOX
 {
-    CD3DX12_BOX() = default;
-    explicit CD3DX12_BOX( const D3D12_BOX& o ) noexcept :
-        D3D12_BOX( o )
-    {}
-    explicit CD3DX12_BOX(
-        LONG Left,
-        LONG Right ) noexcept
-    {
-        left = static_cast<UINT>(Left);
-        top = 0;
-        front = 0;
-        right = static_cast<UINT>(Right);
-        bottom = 1;
-        back = 1;
-    }
-    explicit CD3DX12_BOX(
-        LONG Left,
-        LONG Top,
-        LONG Right,
-        LONG Bottom ) noexcept
-    {
-        left = static_cast<UINT>(Left);
-        top = static_cast<UINT>(Top);
-        front = 0;
-        right = static_cast<UINT>(Right);
-        bottom = static_cast<UINT>(Bottom);
-        back = 1;
-    }
-    explicit CD3DX12_BOX(
-        LONG Left,
-        LONG Top,
-        LONG Front,
-        LONG Right,
-        LONG Bottom,
-        LONG Back ) noexcept
-    {
-        left = static_cast<UINT>(Left);
-        top = static_cast<UINT>(Top);
-        front = static_cast<UINT>(Front);
-        right = static_cast<UINT>(Right);
-        bottom = static_cast<UINT>(Bottom);
-        back = static_cast<UINT>(Back);
-    }
+	CD3DX12_BOX() = default;
+
+	explicit CD3DX12_BOX(const D3D12_BOX& o) noexcept :
+		D3D12_BOX(o)
+	{
+	}
+
+	explicit CD3DX12_BOX(
+		LONG Left,
+		LONG Right) noexcept
+	{
+		left = static_cast<UINT>(Left);
+		top = 0;
+		front = 0;
+		right = static_cast<UINT>(Right);
+		bottom = 1;
+		back = 1;
+	}
+
+	explicit CD3DX12_BOX(
+		LONG Left,
+		LONG Top,
+		LONG Right,
+		LONG Bottom) noexcept
+	{
+		left = static_cast<UINT>(Left);
+		top = static_cast<UINT>(Top);
+		front = 0;
+		right = static_cast<UINT>(Right);
+		bottom = static_cast<UINT>(Bottom);
+		back = 1;
+	}
+
+	explicit CD3DX12_BOX(
+		LONG Left,
+		LONG Top,
+		LONG Front,
+		LONG Right,
+		LONG Bottom,
+		LONG Back) noexcept
+	{
+		left = static_cast<UINT>(Left);
+		top = static_cast<UINT>(Top);
+		front = static_cast<UINT>(Front);
+		right = static_cast<UINT>(Right);
+		bottom = static_cast<UINT>(Bottom);
+		back = static_cast<UINT>(Back);
+	}
 };
 inline bool operator==( const D3D12_BOX& l, const D3D12_BOX& r ) noexcept
 {

@@ -28,8 +28,12 @@ public:
     // Create a 1-level textures
     void Create2D(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitData );
 
+    void Create2DArray(size_t RowPitchBytes, size_t Width, size_t Height, size_t Depth, DXGI_FORMAT Format,
+                       const void* InitialData, unsigned int mipLevels = 1, D3D12_RESOURCE_FLAGS flags =
+	                       D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, size_t slicePitchBytes = -1);
     void Create3D(size_t RowPitchBytes, size_t Width, size_t Height, size_t Depth, DXGI_FORMAT Format,
-                  const void* InitialData);
+                  const void* InitialData, unsigned int mipLevels = 1, D3D12_RESOURCE_FLAGS flags =
+	                  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, size_t slicePitchBytes = -1);
 
     void CreateCube(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitialData);
 

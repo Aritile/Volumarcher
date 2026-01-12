@@ -36,8 +36,8 @@
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\MiniEngine\PropertySheets\Build.props" />
-    <Import Project="..\MiniEngine\PropertySheets\Desktop.props" />
+    <Import Project="$(SolutionDir)\MiniEngine\PropertySheets\Build.props" />
+    <Import Project="$(SolutionDir)\MiniEngine\PropertySheets\Desktop.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -57,7 +57,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile />
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <AdditionalIncludeDirectories>..\MiniEngine\Core;..\Volumarcher\include;..\Volumarcher\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\MiniEngine\Model;$(SolutionDir)\MiniEngine\Core;..\Volumarcher\include;..\Volumarcher\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/nodefaultlib:MSVCRT %(AdditionalOptions)</AdditionalOptions>
@@ -66,6 +66,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="NoiseTexturePath.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
@@ -77,6 +78,9 @@
   <ItemGroup>
     <ProjectReference Include="../MiniEngine/Core/Core.vcxproj">
       <Project>{86A58508-0D6A-4786-A32F-01A301FDC6F3}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="../MiniEngine/Model/Model.vcxproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\Volumarcher\Volumarcher.vcxproj">
@@ -95,27 +99,129 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalLibraryDirectories>..\..\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>zlibstatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Packages\directxmesh_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Release;$(SolutionDir)\Packages\directxtex_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Release;$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)'=='Debug'">$(SolutionDir)\Packages\directxmesh_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Debug;$(SolutionDir)\Packages\directxtex_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Debug;$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;$(Solutiondir)Volumarcher\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Debug'">zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;deflate.lib;
+hwloc.lib;
+Iex-3_4_d.lib;
+IlmThread-3_4_d.lib;
+Imath-3_2_d.lib;
+lz4d.lib;
+lzma.lib;
+OpenEXR-3_4_d.lib;
+OpenEXRCore-3_4_d.lib;
+OpenEXRUtil-3_4_d.lib;
+openjph.0.25d.lib;
+openvdb.lib;
+snappy.lib;
+tbb12_debug.lib;
+tbbmalloc_debug.lib;
+tbbmalloc_proxy_debug.lib;
+zlibd.lib;
+zstd.lib;
+libnoise.lib;
+blosc.lib;
+boost_atomic-vc143-mt-gd-x64-1_89.lib;
+boost_chrono-vc143-mt-gd-x64-1_89.lib;
+boost_container-vc143-mt-gd-x64-1_89.lib;
+boost_date_time-vc143-mt-gd-x64-1_89.lib;
+boost_iostreams-vc143-mt-gd-x64-1_89.lib;
+boost_random-vc143-mt-gd-x64-1_89.lib;
+boost_thread-vc143-mt-gd-x64-1_89.lib;
+bz2d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Release'">zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;OpenEXRUtil-3_4.lib;
+openjph.0.25.lib;
+openvdb.lib;
+snappy.lib;
+tbb12.lib;
+tbbmalloc.lib;
+tbbmalloc_proxy.lib;
+zlib.lib;
+zstd.lib;
+blosc.lib;
+boost_atomic-vc143-mt-x64-1_89.lib;
+boost_chrono-vc143-mt-x64-1_89.lib;
+boost_container-vc143-mt-x64-1_89.lib;
+boost_date_time-vc143-mt-x64-1_89.lib;
+boost_iostreams-vc143-mt-x64-1_89.lib;
+boost_random-vc143-mt-x64-1_89.lib;
+boost_thread-vc143-mt-x64-1_89.lib;
+bz2.lib;
+deflate.lib;
+hwloc.lib;
+Iex-3_4.lib;
+IlmThread-3_4.lib;
+Imath-3_2.lib;
+libnoise.lib;
+lz4.lib;
+lzma.lib;
+OpenEXR-3_4.lib;
+OpenEXRCore-3_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Profile'">zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;OpenEXRUtil-3_4.lib;
+openjph.0.25.lib;
+openvdb.lib;
+snappy.lib;
+tbb12.lib;
+tbbmalloc.lib;
+tbbmalloc_proxy.lib;
+zlib.lib;
+zstd.lib;
+blosc.lib;
+boost_atomic-vc143-mt-x64-1_89.lib;
+boost_chrono-vc143-mt-x64-1_89.lib;
+boost_container-vc143-mt-x64-1_89.lib;
+boost_date_time-vc143-mt-x64-1_89.lib;
+boost_iostreams-vc143-mt-x64-1_89.lib;
+boost_random-vc143-mt-x64-1_89.lib;
+boost_thread-vc143-mt-x64-1_89.lib;
+bz2.lib;
+deflate.lib;
+hwloc.lib;
+Iex-3_4.lib;
+IlmThread-3_4.lib;
+Imath-3_2.lib;
+libnoise.lib;
+lz4.lib;
+lzma.lib;
+OpenEXR-3_4.lib;
+OpenEXRCore-3_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+      <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdcpp17</LanguageStandard>
     </ClCompile>
     <ClCompile>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">false</TreatWarningAsError>
+      <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">stdcpp17</LanguageStandard>
     </ClCompile>
     <ClCompile>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdcpp17</LanguageStandard>
     </ClCompile>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\$(Configuration)\*" "$(TargetDir)"
+xcopy /Y /E "$(Solutiondir)\assets\*" "$(TargetDir)\assets\"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\$(Configuration)\*" "$(TargetDir)"
+xcopy /Y /E "$(Solutiondir)\assets\*" "$(TargetDir)\assets\"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">xcopy /Y /E "$(Solutiondir)\Volumarcher\bin\release\*" "$(TargetDir)"
+xcopy /Y /E "$(Solutiondir)\assets\*" "$(TargetDir)\assets\"</Command>
+    </PostBuildEvent>
+    <FxCompile>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)\Build\$(Platform)\$(Configuration)\Output\$(ProjectName)\CompiledShaders\%(Filename).h</HeaderFileOutput>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets" Condition="Exists('..\..\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets')" />
+    <Import Project="$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets" Condition="Exists('$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\Packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\Packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
-    <Error Condition="!Exists('..\..\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\Packages\WinPixEventRuntime.1.0.210209001\build\WinPixEventRuntime.targets'))" />
   </Target>
 </Project>

@@ -11,8 +11,11 @@
 *.lastbuildstate
 *.ilk
 *.log
+*.pdb
 * - Copy*.*
 Build_VS*
 Build
 .vs
+
 !**/Packages/**/build
+!**/Packages/**/*.pdb

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ImportGroup Label="PropertySheets" />
+	<PropertyGroup Label="UserMacros">
+		<VolumarcherDir>$(SolutionDir)\Volumarcher</VolumarcherDir>
+		<MiniEngineDir>$(SolutionDir)\MiniEngine</MiniEngineDir>
+	</PropertyGroup>
+	<PropertyGroup />
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<AdditionalIncludeDirectories>$(MiniEngineDir);$(VolumarcherDir)\include;$(VolumarcherDir)\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+		</ClCompile>
+		<Link>
+			<AdditionalLibraryDirectories>$(VolumarcherDir)\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+			<AdditionalLibraryDirectories>$(MiniEngineDir)\Packages\directxmesh_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Release;$(MiniEngineDir)\Packages\directxtex_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Release;$(MiniEngineDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+			<AdditionalLibraryDirectories Condition="'$(Configuration)'=='Debug'">$(MiniEngineDir)\Packages\directxmesh_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Debug;$(MiniEngineDir)\Packages\directxtex_desktop_win10.2024.10.29.1\native\lib\$(Platform)\Debug;$(MiniEngineDir)\Packages\zlib-msvc-x64.1.2.11.8900\build\native\lib_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+			<AdditionalDependencies>
+				kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)
+			</AdditionalDependencies>
+			<AdditionalDependencies Condition="'$(Configuration)'=='Debug'">
+				zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;deflate.lib;
+				hwloc.lib;
+				Iex-3_4_d.lib;
+				IlmThread-3_4_d.lib;
+				Imath-3_2_d.lib;
+				lz4d.lib;
+				lzma.lib;
+				OpenEXR-3_4_d.lib;
+				OpenEXRCore-3_4_d.lib;
+				OpenEXRUtil-3_4_d.lib;
+				openjph.0.25d.lib;
+				openvdb.lib;
+				snappy.lib;
+				tbb12_debug.lib;
+				tbbmalloc_debug.lib;
+				tbbmalloc_proxy_debug.lib;
+				zlibd.lib;
+				zstd.lib;
+				libnoise.lib;
+				blosc.lib;
+				boost_atomic-vc143-mt-gd-x64-1_89.lib;
+				boost_chrono-vc143-mt-gd-x64-1_89.lib;
+				boost_container-vc143-mt-gd-x64-1_89.lib;
+				boost_date_time-vc143-mt-gd-x64-1_89.lib;
+				boost_iostreams-vc143-mt-gd-x64-1_89.lib;
+				boost_random-vc143-mt-gd-x64-1_89.lib;
+				boost_thread-vc143-mt-gd-x64-1_89.lib;
+				bz2d.lib;%(AdditionalDependencies)
+			</AdditionalDependencies>
+			<AdditionalDependencies Condition="'$(Configuration)'!='Debug'">
+				zlibstatic.lib;DirectXTex.lib;DirectXMesh.lib;OpenEXRUtil-3_4.lib;
+				openjph.0.25.lib;
+				openvdb.lib;
+				snappy.lib;
+				tbb12.lib;
+				tbbmalloc.lib;
+				tbbmalloc_proxy.lib;
+				zlib.lib;
+				zstd.lib;
+				blosc.lib;
+				boost_atomic-vc143-mt-x64-1_89.lib;
+				boost_chrono-vc143-mt-x64-1_89.lib;
+				boost_container-vc143-mt-x64-1_89.lib;
+				boost_date_time-vc143-mt-x64-1_89.lib;
+				boost_iostreams-vc143-mt-x64-1_89.lib;
+				boost_random-vc143-mt-x64-1_89.lib;
+				boost_thread-vc143-mt-x64-1_89.lib;
+				bz2.lib;
+				deflate.lib;
+				hwloc.lib;
+				Iex-3_4.lib;
+				IlmThread-3_4.lib;
+				Imath-3_2.lib;
+				libnoise.lib;
+				lz4.lib;
+				lzma.lib;
+				OpenEXR-3_4.lib;
+				OpenEXRCore-3_4.lib;%(AdditionalDependencies)
+			</AdditionalDependencies>
+		</Link>
+	</ItemDefinitionGroup>
+	<ItemGroup>
+		<BuildMacro Include="VolumarcherDir">
+			<Value>$(VolumarcherDir)</Value>
+		</BuildMacro>
+		<BuildMacro Include="MiniEngineDir">
+			<Value>$(MiniEngineDir)</Value>
+		</BuildMacro>
+	</ItemGroup>
+</Project>

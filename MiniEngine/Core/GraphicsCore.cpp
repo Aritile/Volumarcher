@@ -32,10 +32,10 @@
 #include "TemporalEffects.h"
 #include "Display.h"
 
-#pragma comment(lib, "d3d12.lib") 
+#pragma comment(lib, "d3d12.lib")
 
 #ifdef _GAMING_DESKTOP
-    #include <winreg.h>		// To read the registry
+#include <winreg.h>		// To read the registry
 #endif
 
 using namespace Math;
@@ -43,159 +43,162 @@ using namespace Math;
 namespace Graphics
 {
 #ifndef RELEASE
-    const GUID WKPDID_D3DDebugObjectName = { 0x429b8c22,0x9188,0x4b0c, { 0x87,0x42,0xac,0xb0,0xbf,0x85,0xc2,0x00 }};
+	const GUID WKPDID_D3DDebugObjectName = {
+		0x429b8c22, 0x9188, 0x4b0c, {0x87, 0x42, 0xac, 0xb0, 0xbf, 0x85, 0xc2, 0x00}
+	};
 #endif
 
-    bool g_bTypedUAVLoadSupport_R11G11B10_FLOAT = false;
-    bool g_bTypedUAVLoadSupport_R16G16B16A16_FLOAT = false;
+	bool g_bTypedUAVLoadSupport_R11G11B10_FLOAT = false;
+	bool g_bTypedUAVLoadSupport_R16G16B16A16_FLOAT = false;
 
-    ID3D12Device* g_Device = nullptr;
-    CommandListManager g_CommandManager;
-    ContextManager g_ContextManager;
+	ID3D12Device* g_Device = nullptr;
+	CommandListManager g_CommandManager;
+	ContextManager g_ContextManager;
 
-    D3D_FEATURE_LEVEL g_D3DFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+	D3D_FEATURE_LEVEL g_D3DFeatureLevel = D3D_FEATURE_LEVEL_11_0;
 
-    DescriptorAllocator g_DescriptorAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] =
-    {
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-        D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
-        D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-        D3D12_DESCRIPTOR_HEAP_TYPE_DSV
-    };
+	DescriptorAllocator g_DescriptorAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] =
+	{
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+		D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+		D3D12_DESCRIPTOR_HEAP_TYPE_DSV
+	};
 
-    static const uint32_t vendorID_Nvidia   = 0x10DE;
-    static const uint32_t vendorID_AMD      = 0x1002;
-    static const uint32_t vendorID_Intel    = 0x8086;
+	static const uint32_t vendorID_Nvidia = 0x10DE;
+	static const uint32_t vendorID_AMD = 0x1002;
+	static const uint32_t vendorID_Intel = 0x8086;
 
-    uint32_t GetDesiredGPUVendor()
-    {
-        uint32_t desiredVendor = 0;
+	uint32_t GetDesiredGPUVendor()
+	{
+		uint32_t desiredVendor = 0;
 
-        std::wstring vendorVal;
-        if (CommandLineArgs::GetString(L"vendor", vendorVal))
-        {
-            // Convert to lower case
-            std::transform(vendorVal.begin(), vendorVal.end(), vendorVal.begin(), std::towlower);
+		std::wstring vendorVal;
+		if (CommandLineArgs::GetString(L"vendor", vendorVal))
+		{
+			// Convert to lower case
+			std::transform(vendorVal.begin(), vendorVal.end(), vendorVal.begin(), std::towlower);
 
-            if (vendorVal.find(L"amd") != std::wstring::npos)
-            {
-                desiredVendor = vendorID_AMD;
-            }
-            else if (vendorVal.find(L"nvidia") != std::wstring::npos || vendorVal.find(L"nvd") != std::wstring::npos ||
-                vendorVal.find(L"nvda") != std::wstring::npos || vendorVal.find(L"nv") != std::wstring::npos)
-            {
-                desiredVendor = vendorID_Nvidia;
-            }
-            else if (vendorVal.find(L"intel") != std::wstring::npos || vendorVal.find(L"intc") != std::wstring::npos)
-            {
-                desiredVendor = vendorID_Intel;
-            }
-        }
+			if (vendorVal.find(L"amd") != std::wstring::npos)
+			{
+				desiredVendor = vendorID_AMD;
+			}
+			else if (vendorVal.find(L"nvidia") != std::wstring::npos || vendorVal.find(L"nvd") != std::wstring::npos ||
+				vendorVal.find(L"nvda") != std::wstring::npos || vendorVal.find(L"nv") != std::wstring::npos)
+			{
+				desiredVendor = vendorID_Nvidia;
+			}
+			else if (vendorVal.find(L"intel") != std::wstring::npos || vendorVal.find(L"intc") != std::wstring::npos)
+			{
+				desiredVendor = vendorID_Intel;
+			}
+		}
 
-        return desiredVendor;
-    }
+		return desiredVendor;
+	}
 
-    const wchar_t* GPUVendorToString(uint32_t vendorID)
-    {
-        switch (vendorID)
-        {
-        case vendorID_Nvidia:
-            return L"Nvidia";
-        case vendorID_AMD:
-            return L"AMD";
-        case vendorID_Intel:
-            return L"Intel";
-        default:
-            return L"Unknown";
-            break;
-        }
-    }
+	const wchar_t* GPUVendorToString(uint32_t vendorID)
+	{
+		switch (vendorID)
+		{
+		case vendorID_Nvidia:
+			return L"Nvidia";
+		case vendorID_AMD:
+			return L"AMD";
+		case vendorID_Intel:
+			return L"Intel";
+		default:
+			return L"Unknown";
+			break;
+		}
+	}
 
-    uint32_t GetVendorIdFromDevice(ID3D12Device* pDevice)
-    {
-        LUID luid = pDevice->GetAdapterLuid();
+	uint32_t GetVendorIdFromDevice(ID3D12Device* pDevice)
+	{
+		LUID luid = pDevice->GetAdapterLuid();
 
-        // Obtain the DXGI factory
-        Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
-        ASSERT_SUCCEEDED(CreateDXGIFactory2(0, MY_IID_PPV_ARGS(&dxgiFactory)));
+		// Obtain the DXGI factory
+		Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
+		ASSERT_SUCCEEDED(CreateDXGIFactory2(0, MY_IID_PPV_ARGS(&dxgiFactory)));
 
-        Microsoft::WRL::ComPtr<IDXGIAdapter1> pAdapter;
+		Microsoft::WRL::ComPtr<IDXGIAdapter1> pAdapter;
 
-        if (SUCCEEDED(dxgiFactory->EnumAdapterByLuid(luid, MY_IID_PPV_ARGS(&pAdapter))))
-        {
-            DXGI_ADAPTER_DESC1 desc;
-            if(SUCCEEDED(pAdapter->GetDesc1(&desc)))
-            {
-                return desc.VendorId;
-            }
-        }
+		if (SUCCEEDED(dxgiFactory->EnumAdapterByLuid(luid, MY_IID_PPV_ARGS(&pAdapter))))
+		{
+			DXGI_ADAPTER_DESC1 desc;
+			if (SUCCEEDED(pAdapter->GetDesc1(&desc)))
+			{
+				return desc.VendorId;
+			}
+		}
 
-        return 0;
-    }
+		return 0;
+	}
 
-    bool IsDeviceNvidia(ID3D12Device* pDevice)
-    {
-        return GetVendorIdFromDevice(pDevice) == vendorID_Nvidia;
-    }
+	bool IsDeviceNvidia(ID3D12Device* pDevice)
+	{
+		return GetVendorIdFromDevice(pDevice) == vendorID_Nvidia;
+	}
 
-    bool IsDeviceAMD(ID3D12Device* pDevice)
-    {
-        return GetVendorIdFromDevice(pDevice) == vendorID_AMD;
-    }
+	bool IsDeviceAMD(ID3D12Device* pDevice)
+	{
+		return GetVendorIdFromDevice(pDevice) == vendorID_AMD;
+	}
 
-    bool IsDeviceIntel(ID3D12Device* pDevice)
-    {
-        return GetVendorIdFromDevice(pDevice) == vendorID_Intel;
-    }
+	bool IsDeviceIntel(ID3D12Device* pDevice)
+	{
+		return GetVendorIdFromDevice(pDevice) == vendorID_Intel;
+	}
 
 	// Check adapter support for DirectX Raytracing.
 	bool IsDirectXRaytracingSupported(ID3D12Device* testDevice)
 	{
 		D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupport = {};
 
-        if (FAILED(testDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupport, sizeof(featureSupport))))
-            return false;
+		if (FAILED(
+			testDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupport, sizeof(featureSupport))))
+			return false;
 
-        return featureSupport.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+		return featureSupport.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
 	}
 }
 
 // Initialize the DirectX resources required to run.
 void Graphics::Initialize(bool RequireDXRSupport)
 {
-    Microsoft::WRL::ComPtr<ID3D12Device> pDevice;
+	Microsoft::WRL::ComPtr<ID3D12Device> pDevice;
 
-    uint32_t useDebugLayers = 0;
-    CommandLineArgs::GetInteger(L"debug", useDebugLayers);
+	uint32_t useDebugLayers = 0;
+	CommandLineArgs::GetInteger(L"debug", useDebugLayers);
 #if _DEBUG
     // Default to true for debug builds
     useDebugLayers = 1;
 #endif
 
-    DWORD dxgiFactoryFlags = 0;
+	DWORD dxgiFactoryFlags = 0;
 
-    if (useDebugLayers)
-    {
-        Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
-        if (SUCCEEDED(D3D12GetDebugInterface(MY_IID_PPV_ARGS(&debugInterface))))
-        {
-            debugInterface->EnableDebugLayer();
+	if (useDebugLayers)
+	{
+		Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
+		if (SUCCEEDED(D3D12GetDebugInterface(MY_IID_PPV_ARGS(&debugInterface))))
+		{
+			debugInterface->EnableDebugLayer();
 
-            uint32_t useGPUBasedValidation = 0;
-            CommandLineArgs::GetInteger(L"gpu_debug", useGPUBasedValidation);
-            if (useGPUBasedValidation)
-            {
-                Microsoft::WRL::ComPtr<ID3D12Debug1> debugInterface1;
-                if (SUCCEEDED((debugInterface->QueryInterface(MY_IID_PPV_ARGS(&debugInterface1)))))
-                {
-                    debugInterface1->SetEnableGPUBasedValidation(true);
-                }
-            }
-        }
-        else
-        {
-            Utility::Print("WARNING:  Unable to enable D3D12 debug validation layer\n");
-        }
+			uint32_t useGPUBasedValidation = 0;
+			CommandLineArgs::GetInteger(L"gpu_debug", useGPUBasedValidation);
+			if (useGPUBasedValidation)
+			{
+				Microsoft::WRL::ComPtr<ID3D12Debug1> debugInterface1;
+				if (SUCCEEDED((debugInterface->QueryInterface(MY_IID_PPV_ARGS(&debugInterface1)))))
+				{
+					debugInterface1->SetEnableGPUBasedValidation(true);
+				}
+			}
+		}
+		else
+		{
+			Utility::Print("WARNING:  Unable to enable D3D12 debug validation layer\n");
+		}
 
 #if _DEBUG
         ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
@@ -216,108 +219,112 @@ void Graphics::Initialize(bool RequireDXRSupport)
             dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
         }
 #endif
-    }
+	}
 
-    // Obtain the DXGI factory
-    Microsoft::WRL::ComPtr<IDXGIFactory6> dxgiFactory;
-    ASSERT_SUCCEEDED(CreateDXGIFactory2(dxgiFactoryFlags, MY_IID_PPV_ARGS(&dxgiFactory)));
+	// Obtain the DXGI factory
+	Microsoft::WRL::ComPtr<IDXGIFactory6> dxgiFactory;
+	ASSERT_SUCCEEDED(CreateDXGIFactory2(dxgiFactoryFlags, MY_IID_PPV_ARGS(&dxgiFactory)));
 
-    // Create the D3D graphics device
-    Microsoft::WRL::ComPtr<IDXGIAdapter1> pAdapter;
+	// Create the D3D graphics device
+	Microsoft::WRL::ComPtr<IDXGIAdapter1> pAdapter;
 
-    uint32_t bUseWarpDriver = false;
-    CommandLineArgs::GetInteger(L"warp", bUseWarpDriver);
+	uint32_t bUseWarpDriver = false;
+	CommandLineArgs::GetInteger(L"warp", bUseWarpDriver);
 
-    uint32_t desiredVendor = GetDesiredGPUVendor();
+	uint32_t desiredVendor = GetDesiredGPUVendor();
 
-    if (desiredVendor)
-    {
-        Utility::Printf(L"Looking for a %s GPU\n", GPUVendorToString(desiredVendor));
-    }
+	if (desiredVendor)
+	{
+		Utility::Printf(L"Looking for a %s GPU\n", GPUVendorToString(desiredVendor));
+	}
 
-    // Temporary workaround because SetStablePowerState() is crashing
-    D3D12EnableExperimentalFeatures(0, nullptr, nullptr, nullptr);
+	// Temporary workaround because SetStablePowerState() is crashing
+	D3D12EnableExperimentalFeatures(0, nullptr, nullptr, nullptr);
 
-    if (!bUseWarpDriver)
-    {
-        SIZE_T MaxSize = 0;
+	if (!bUseWarpDriver)
+	{
+		SIZE_T MaxSize = 0;
 
-        for (uint32_t Idx = 0; DXGI_ERROR_NOT_FOUND != dxgiFactory->EnumAdapters1(Idx, &pAdapter); ++Idx)
-        {
-            DXGI_ADAPTER_DESC1 desc;
-            pAdapter->GetDesc1(&desc);
+		for (uint32_t Idx = 0; DXGI_ERROR_NOT_FOUND != dxgiFactory->EnumAdapterByGpuPreference(
+			     Idx, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&pAdapter)); ++Idx)
+		{
+			DXGI_ADAPTER_DESC1 desc;
+			pAdapter->GetDesc1(&desc);
 
-            // Is a software adapter?
-            if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-                continue;
+			// Is a software adapter?
+			if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+				continue;
 
-            // Is this the desired vendor desired?
-            if (desiredVendor != 0 && desiredVendor != desc.VendorId)
-                continue;
+			// Is this the desired vendor desired?
+			if (desiredVendor != 0 && desiredVendor != desc.VendorId)
+				continue;
 
-            // Can create a D3D12 device?
-            if (FAILED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_11_0, MY_IID_PPV_ARGS(&pDevice))))
-                continue;
+			// Can create a D3D12 device?
+			if (FAILED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_11_0, MY_IID_PPV_ARGS(&pDevice))))
+				continue;
 
-            // Does support DXR if required?
-            if (RequireDXRSupport && !IsDirectXRaytracingSupported(pDevice.Get()))
-                continue;
+			// Does support DXR if required?
+			if (RequireDXRSupport && !IsDirectXRaytracingSupported(pDevice.Get()))
+				continue;
 
-            // By default, search for the adapter with the most memory because that's usually the dGPU.
-            if (desc.DedicatedVideoMemory < MaxSize)
-                continue;
+			// By default, search for the adapter with the most memory because that's usually the dGPU.
+			if (desc.DedicatedVideoMemory < MaxSize)
+				continue;
 
-            MaxSize = desc.DedicatedVideoMemory;
+			MaxSize = desc.DedicatedVideoMemory;
 
-            if (g_Device != nullptr)
-                g_Device->Release();
+			if (g_Device != nullptr)
+				g_Device->Release();
 
-            g_Device = pDevice.Detach();
+			g_Device = pDevice.Detach();
 
-            Utility::Printf(L"Selected GPU:  %s (%u MB)\n", desc.Description, desc.DedicatedVideoMemory >> 20);
-        }
-    }
+			Utility::Printf(L"Selected GPU:  %s (%u MB)\n", desc.Description, desc.DedicatedVideoMemory >> 20);
+			break;
+		}
+	}
 
-    if (RequireDXRSupport && !g_Device)
-    {
-        Utility::Printf("Unable to find a DXR-capable device. Halting.\n");
-        __debugbreak();
-    }
+	if (RequireDXRSupport && !g_Device)
+	{
+		Utility::Printf("Unable to find a DXR-capable device. Halting.\n");
+		__debugbreak();
+	}
 
-    if (g_Device == nullptr)
-    {
-        if (bUseWarpDriver)
-            Utility::Print("WARP software adapter requested.  Initializing...\n");
-        else
-            Utility::Print("Failed to find a hardware adapter.  Falling back to WARP.\n");
-        ASSERT_SUCCEEDED(dxgiFactory->EnumWarpAdapter(MY_IID_PPV_ARGS(&pAdapter)));
-        ASSERT_SUCCEEDED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_11_0, MY_IID_PPV_ARGS(&pDevice)));
-        g_Device = pDevice.Detach();
-    }
+	if (g_Device == nullptr)
+	{
+		if (bUseWarpDriver)
+			Utility::Print("WARP software adapter requested.  Initializing...\n");
+		else
+			Utility::Print("Failed to find a hardware adapter.  Falling back to WARP.\n");
+		ASSERT_SUCCEEDED(dxgiFactory->EnumWarpAdapter(MY_IID_PPV_ARGS(&pAdapter)));
+		ASSERT_SUCCEEDED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_11_0, MY_IID_PPV_ARGS(&pDevice)));
+		g_Device = pDevice.Detach();
+	}
 #ifndef RELEASE
-    else
-    {
-        bool DeveloperModeEnabled = false;
+	else
+	{
+		bool DeveloperModeEnabled = false;
 
-        // Look in the Windows Registry to determine if Developer Mode is enabled
-        HKEY hKey;
-        LSTATUS result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock", 0, KEY_READ, &hKey);
-        if (result == ERROR_SUCCESS)
-        {
-            DWORD keyValue, keySize = sizeof(DWORD);
-            result = RegQueryValueEx(hKey, L"AllowDevelopmentWithoutDevLicense", 0, NULL, (byte*)&keyValue, &keySize);
-            if (result == ERROR_SUCCESS && keyValue == 1)
-                DeveloperModeEnabled = true;
-            RegCloseKey(hKey);
-        }
+		// Look in the Windows Registry to determine if Developer Mode is enabled
+		HKEY hKey;
+		LSTATUS result = RegOpenKeyEx(
+			HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock", 0, KEY_READ, &hKey);
+		if (result == ERROR_SUCCESS)
+		{
+			DWORD keyValue, keySize = sizeof(DWORD);
+			result = RegQueryValueEx(hKey, L"AllowDevelopmentWithoutDevLicense", 0, NULL, (byte*)&keyValue, &keySize);
+			if (result == ERROR_SUCCESS && keyValue == 1)
+				DeveloperModeEnabled = true;
+			RegCloseKey(hKey);
+		}
 
-        WARN_ONCE_IF_NOT(DeveloperModeEnabled, "Enable Developer Mode on Windows 10 to get consistent profiling results");
+		WARN_ONCE_IF_NOT(DeveloperModeEnabled,
+		                 "Enable Developer Mode on Windows 10 to get consistent profiling results");
 
-        // Prevent the GPU from overclocking or underclocking to get consistent timings
-        if (DeveloperModeEnabled)
-            g_Device->SetStablePowerState(TRUE);
-    }
-#endif	
+		// Prevent the GPU from overclocking or underclocking to get consistent timings
+		if (DeveloperModeEnabled)
+			g_Device->SetStablePowerState(TRUE);
+	}
+#endif
 
 #if _DEBUG
     ID3D12InfoQueue* pInfoQueue = nullptr;
@@ -372,72 +379,72 @@ void Graphics::Initialize(bool RequireDXRSupport)
     }
 #endif
 
-    // We like to do read-modify-write operations on UAVs during post processing.  To support that, we
-    // need to either have the hardware do typed UAV loads of R11G11B10_FLOAT or we need to manually
-    // decode an R32_UINT representation of the same buffer.  This code determines if we get the hardware
-    // load support.
-    D3D12_FEATURE_DATA_D3D12_OPTIONS FeatureData = {};
-    if (SUCCEEDED(g_Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &FeatureData, sizeof(FeatureData))))
-    {
-        if (FeatureData.TypedUAVLoadAdditionalFormats)
-        {
-            D3D12_FEATURE_DATA_FORMAT_SUPPORT Support =
-            {
-                DXGI_FORMAT_R11G11B10_FLOAT, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE
-            };
+	// We like to do read-modify-write operations on UAVs during post processing.  To support that, we
+	// need to either have the hardware do typed UAV loads of R11G11B10_FLOAT or we need to manually
+	// decode an R32_UINT representation of the same buffer.  This code determines if we get the hardware
+	// load support.
+	D3D12_FEATURE_DATA_D3D12_OPTIONS FeatureData = {};
+	if (SUCCEEDED(g_Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &FeatureData, sizeof(FeatureData))))
+	{
+		if (FeatureData.TypedUAVLoadAdditionalFormats)
+		{
+			D3D12_FEATURE_DATA_FORMAT_SUPPORT Support =
+			{
+				DXGI_FORMAT_R11G11B10_FLOAT, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE
+			};
 
-            if (SUCCEEDED(g_Device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &Support, sizeof(Support))) &&
-                (Support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) != 0)
-            {
-                g_bTypedUAVLoadSupport_R11G11B10_FLOAT = true;
-            }
+			if (SUCCEEDED(g_Device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &Support, sizeof(Support))) &&
+				(Support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) != 0)
+			{
+				g_bTypedUAVLoadSupport_R11G11B10_FLOAT = true;
+			}
 
-            Support.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			Support.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-            if (SUCCEEDED(g_Device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &Support, sizeof(Support))) &&
-                (Support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) != 0)
-            {
-                g_bTypedUAVLoadSupport_R16G16B16A16_FLOAT = true;
-            }
-        }
-    }
+			if (SUCCEEDED(g_Device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &Support, sizeof(Support))) &&
+				(Support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) != 0)
+			{
+				g_bTypedUAVLoadSupport_R16G16B16A16_FLOAT = true;
+			}
+		}
+	}
 
-    g_CommandManager.Create(g_Device);
+	g_CommandManager.Create(g_Device);
 
-    // Common state was moved to GraphicsCommon.*
-    InitializeCommonState();
+	// Common state was moved to GraphicsCommon.*
+	InitializeCommonState();
 
-    Display::Initialize();
+	Display::Initialize();
 
-    GpuTimeManager::Initialize(4096);
-    TemporalEffects::Initialize();
-    PostEffects::Initialize();
-    SSAO::Initialize();
-    TextRenderer::Initialize();
-    GraphRenderer::Initialize();
-    ParticleEffectManager::Initialize(3840, 2160);
+	GpuTimeManager::Initialize(4096);
+	TemporalEffects::Initialize();
+	PostEffects::Initialize();
+	SSAO::Initialize();
+	TextRenderer::Initialize();
+	GraphRenderer::Initialize();
+	ParticleEffectManager::Initialize(3840, 2160);
 }
 
-void Graphics::Shutdown( void )
+void Graphics::Shutdown(void)
 {
-    g_CommandManager.IdleGPU();
+	g_CommandManager.IdleGPU();
 
-    CommandContext::DestroyAllContexts();
-    g_CommandManager.Shutdown();
-    GpuTimeManager::Shutdown();
-    PSO::DestroyAll();
-    RootSignature::DestroyAll();
-    DescriptorAllocator::DestroyAll();
+	CommandContext::DestroyAllContexts();
+	g_CommandManager.Shutdown();
+	GpuTimeManager::Shutdown();
+	PSO::DestroyAll();
+	RootSignature::DestroyAll();
+	DescriptorAllocator::DestroyAll();
 
-    DestroyCommonState();
-    DestroyRenderingBuffers();
-    TemporalEffects::Shutdown();
-    PostEffects::Shutdown();
-    SSAO::Shutdown();
-    TextRenderer::Shutdown();
-    GraphRenderer::Shutdown();
-    ParticleEffectManager::Shutdown();
-    Display::Shutdown();
+	DestroyCommonState();
+	DestroyRenderingBuffers();
+	TemporalEffects::Shutdown();
+	PostEffects::Shutdown();
+	SSAO::Shutdown();
+	TextRenderer::Shutdown();
+	GraphRenderer::Shutdown();
+	ParticleEffectManager::Shutdown();
+	Display::Shutdown();
 
 #if defined(_GAMING_DESKTOP) && defined(_DEBUG)
     ID3D12DebugDevice* debugInterface;
@@ -448,9 +455,9 @@ void Graphics::Shutdown( void )
     }
 #endif
 
-    if (g_Device != nullptr)
-    {
-        g_Device->Release();
-        g_Device = nullptr;
-    }
+	if (g_Device != nullptr)
+	{
+		g_Device->Release();
+		g_Device = nullptr;
+	}
 }
