@@ -9,7 +9,6 @@ using uint = uint32_t;
 #else
 #endif
 
-<<<<<<< HEAD
 
 static const uint MAX_LIGHTSOURCES = 4;
 static const uint VOLUMETRIC_PASS_GROUP_SIZE = 16;
@@ -20,33 +19,6 @@ struct BlitValues
 {
 	uint outputX;
 	uint outputY;
-=======
-struct VolumetricDynamics
-{
-	float3 camPos;
-	float time;
-	float3 camDir;
-};
-
-struct VolumetricSettings
-{
-	float3 origin;
-	int baseSampleCount;
-	float3 worldSize;
-	int directLightSampleCount;
-	int ambientSampleCount;
-	uint screenResX;
-	uint screenResY;
-	float zNear;
-	float zFar;
-	float vFovAdjust; // tan(Fov(rad) / 2)
-};
-
-struct VolumetricWorld
-{
-	float3 wind; // Direction/speed the noise scrolls
-	float globalDensityScale; // scale the density from world (0-1) with this
->>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 };
 
 struct VolumetricDynamics
@@ -152,7 +124,6 @@ struct DirectLightingSettings
 	float pad2;
 };
 
-<<<<<<< HEAD
 struct AtmosphereRenderConstants
 {
 	float3 camDir;
@@ -173,10 +144,4 @@ struct LightSource
 	float radius;
 	float3 light;
 	float pad0;
-=======
-
-struct MipConstants
-{
-	int outSize;
->>>>>>> 57591406dec9de690cf8c3265bfe9e668a263d01
 };
