@@ -26,7 +26,9 @@ public:
     Texture(D3D12_CPU_DESCRIPTOR_HANDLE Handle) : m_hCpuDescriptorHandle(Handle) {}
 
     // Create a 1-level textures
-    void Create2D(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitData );
+    void Create2D(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitData,
+                  D3D12_RESOURCE_FLAGS Flags
+	                  = D3D12_RESOURCE_FLAG_NONE);
 
     void Create2DArray(size_t RowPitchBytes, size_t Width, size_t Height, size_t Depth, DXGI_FORMAT Format,
                        const void* InitialData, unsigned int mipLevels = 1, D3D12_RESOURCE_FLAGS flags =

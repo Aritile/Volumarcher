@@ -58,7 +58,7 @@ namespace Renderer
         kNumRootBindings
     };
 
-    void Initialize(void);
+    void Initialize(D3D12_CPU_DESCRIPTOR_HANDLE _cloudShadowmap);
     void Shutdown(void);
 
     uint8_t GetPSO(uint16_t psoFlags);
@@ -110,7 +110,7 @@ namespace Renderer
 
         void Sort();
 
-        void RenderMeshes(DrawPass pass, GraphicsContext& context, GlobalConstants& globals);
+		void RenderMeshes(DrawPass pass, GraphicsContext& context, GlobalConstants& globals);
 
     private:
 

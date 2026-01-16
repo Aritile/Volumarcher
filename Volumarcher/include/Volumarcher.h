@@ -181,6 +181,8 @@ namespace Volumarcher
 		                       glm::vec3 _camPos,
 		                       glm::vec3 _camForward);
 
+
+
 		/// <summary>
 		///Render a realistic generated atmosphere skybox based on sunDirection
 		/// </summary>
@@ -202,6 +204,8 @@ namespace Volumarcher
 		void SetPointLights(std::vector<PointLight> _lights);
 
 	private:
+		friend class CloudShadowMap;
+
 		void UpdateShaderConstants();
 
 		void UpdateDirectLighting();

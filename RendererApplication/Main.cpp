@@ -24,6 +24,8 @@
 //Optional defines
 //#define VOLUMARCHER_NO_STB_IMAGE //Does not use stb image, you have to load noise textures manually
 //#define VOLUMARCHER_NO_SKYBOX //Removes example skybox rendering
+#include "CloudShadowMap.h"
+#include "ShadowCamera.h"
 #include "Volumarcher.h"
 
 
@@ -39,6 +41,7 @@ static constexpr ArtisticExampleSettings StartSettings = ArtisticExampleSettings
 const char* clouds[] = {
 	"landscape",
 	"landscape2",
+	"bigscape",
 	"singlecloud",
 	"disney",
 	"rainbow",
@@ -71,7 +74,7 @@ public:
 	void RenderScene(void) override;
 
 private:
-	std::unique_ptr<Volumarcher::VolumarcherContext> m_volumetricContext;
+	std::unique_ptr<Volumarcher::VolumarcherContext> m_volumarcherContext;
 
 	glm::vec3 m_camPos{0.f};
 	glm::vec3 m_camForward{1, 0, 0};
@@ -90,7 +93,7 @@ private:
 
 	std::chrono::steady_clock::time_point m_lastTime;
 
-	//Cube/Rasterizor stuff
+	//Cube/Rasterizer stuff
 	StructuredBuffer vertexBuffer;
 	StructuredBuffer indexBuffer;
 
@@ -100,11 +103,23 @@ private:
 
 	ModelInstance m_model;
 	Math::Camera m_camera;
+	ShadowCamera m_shadowCamera;
+	float m_shadowFarPlane;
+
 	std::unique_ptr<CameraController> m_cameraController;
 
 	glm::vec3 m_sunDir;
 
+
 	//--
+
+	//Optional rasterizer integration
+
+	std::unique_ptr<Volumarcher::CloudShadowMap> m_cloudShadow{nullptr};
+
+	//--
+
+
 	int32_t m_loadedCloud = 0;
 	EnumVar m_cloud{"DemoApplication/Cloud", m_loadedCloud, _countof(clouds), clouds};
 	BoolVar m_rotateSun{"DemoApplication/Rotate Sun", true};
@@ -145,7 +160,7 @@ private:
 
 void RendererApplication::InitRasterizor()
 {
-	Renderer::Initialize();
+	Renderer::Initialize(m_cloudShadow->GetShadowStrengthMap().GetSRV());
 
 	m_model = Renderer::LoadModel(L"./assets/models/biglandscape.gltf", false);
 	m_model.Resize(50.0f);
@@ -164,13 +179,16 @@ void RendererApplication::Startup(void)
 {
 	Utility::Printf("Starting Volumarcher demo\n");
 
-	InitRasterizor();
 
 	Utility::Printf("Creating Volumetric Context\n");
 	CpuTimer startupTimer;
 	startupTimer.Start();
 
+	m_cloudShadow = std::make_unique<Volumarcher::CloudShadowMap>(256);
+
 	///Create a volumarcher context,
+
+	//These classes can either take paths to load with stb_image or your own raw texture data
 
 	//Noise used for adding detail red channel is low frequency green is high frequency, use supplied textures if unsure
 	Volumarcher::DetailNoise detailNoise(NOISE_TEXTURES);
@@ -180,12 +198,12 @@ void RendererApplication::Startup(void)
 
 	//settings of your own camera, this needs to be the same as your geometry pass
 	Volumarcher::CameraSettings cameraSettings{m_near, m_far, m_vFov};
-	m_volumetricContext = std::make_unique<Volumarcher::VolumarcherContext>(detailNoise, blueNoise, cameraSettings);
+	m_volumarcherContext = std::make_unique<Volumarcher::VolumarcherContext>(detailNoise, blueNoise, cameraSettings);
 
 	//Load a world grid of clouds
 	std::string cloud = clouds[m_cloud];
-	auto result [[maybe_unused]] = m_volumetricContext->LoadGrid("./assets/" + cloud + ".vdb", 0.3f,
-	                                                             glm::vec3(0.f, 5.f, 0.f));
+	auto result [[maybe_unused]] = m_volumarcherContext->LoadGrid("./assets/" + cloud + ".vdb", 0.3f,
+	                                                              glm::vec3(0.f, 5.f, 0.f));
 	assert(result == Volumarcher::Result::Succeeded);
 
 	m_camPos = {0, 0, 0};
@@ -197,6 +215,9 @@ void RendererApplication::Startup(void)
 	startupTimer.Stop();
 
 	Utility::Printf("VolumetricContext Startup Time: %fs\n", startupTimer.GetTime());
+
+	InitRasterizor();
+
 }
 
 void RendererApplication::Cleanup(void)
@@ -217,7 +238,7 @@ void RendererApplication::Update(const float _deltaTime)
 	gfxContext.Finish();
 
 	//Updates internal timer of volumarcher for animated effects/noise
-	m_volumetricContext->Update(_deltaTime);
+	m_volumarcherContext->Update(_deltaTime);
 
 	//This is somewhat costly to call every frame, but fine enough for this demo
 	if (m_lightsEnabled)
@@ -230,12 +251,12 @@ void RendererApplication::Update(const float _deltaTime)
 				          (rand() / static_cast<float>(RAND_MAX) - 0.5f) * 10),
 				(rand() / static_cast<float>(RAND_MAX)) * 10, glm::vec3(10, 10, 25)
 			};
-			m_volumetricContext->SetPointLights(m_lights);
+			m_volumarcherContext->SetPointLights(m_lights);
 		}
 	}
 	else
 	{
-		m_volumetricContext->SetPointLights({});
+		m_volumarcherContext->SetPointLights({});
 	}
 
 
@@ -262,9 +283,11 @@ void RendererApplication::Update(const float _deltaTime)
 			m_loadedCloud = m_cloud;
 			std::string cloud = clouds[m_cloud];
 
+			glm::vec3 spawnPos = {0.f, 5.f, 0.f};
+
 			if (cloud == "nebula")
 			{
-				m_volumetricContext->SetPointLights({
+				m_volumarcherContext->SetPointLights({
 					{
 						glm::vec3(2, 10, 2
 						),
@@ -279,10 +302,10 @@ void RendererApplication::Update(const float _deltaTime)
 			}
 			else
 			{
-				m_volumetricContext->SetPointLights({});
+				m_volumarcherContext->SetPointLights({});
 			}
-			auto result [[maybe_unused]] = m_volumetricContext->LoadGrid(
-				"./assets/" + cloud + ".vdb", 0.3f, glm::vec3(0.f, 5.f, 0.f));
+			auto result [[maybe_unused]] = m_volumarcherContext->LoadGrid(
+				"./assets/" + cloud + ".vdb", 0.3f, spawnPos);
 			assert(result == Volumarcher::Result::Succeeded);
 		}
 	}
@@ -299,7 +322,7 @@ void RendererApplication::Update(const float _deltaTime)
 	{
 		m_timer += _deltaTime * m_sunSpeed;
 
-		auto envSettings = m_volumetricContext->GetEnvironmentSettings();
+		auto envSettings = m_volumarcherContext->GetEnvironmentSettings();
 		//float sunPitch = cos(m_timer) * 0.5 + 0.5;
 		//envSettings.sunDirection = normalize(glm::vec3(sin(m_timer * 0.27) * (1 - sunPitch), -sunPitch,
 		//                                               cos(m_timer * 0.27)) * ((1 - sunPitch)));
@@ -308,14 +331,19 @@ void RendererApplication::Update(const float _deltaTime)
 		m_sunDir = {-envSettings.sunDirection.x, -envSettings.sunDirection.y, -envSettings.sunDirection.z};
 
 		envSettings.ambientLight = m_artSettings.m_ambientEnabled
-			                           ? m_volumetricContext->GetSkyBackgroundAmbient(m_sunDir)
+			                           ? m_volumarcherContext->GetSkyBackgroundAmbient(m_sunDir)
 			                           : glm::vec3(0.f);
-		envSettings.sunLight = m_volumetricContext->GetSkyBackgroundSunlight(m_sunDir);
+		envSettings.sunLight = m_volumarcherContext->GetSkyBackgroundSunlight(m_sunDir);
 
 
-		m_volumetricContext->SetEnvironmentSettings(envSettings);
+		m_volumarcherContext->SetEnvironmentSettings(envSettings);
 	}
+	auto envSettings = m_volumarcherContext->GetEnvironmentSettings();
 
+	envSettings.ambientLight = m_artSettings.m_ambientEnabled
+		                           ? m_volumarcherContext->GetSkyBackgroundAmbient(m_sunDir)
+		                           : glm::vec3(0.f);
+	m_volumarcherContext->SetEnvironmentSettings(envSettings);
 
 	//EngineTuning UI for changing variables
 	Volumarcher::QualitySettings settings{
@@ -334,7 +362,7 @@ void RendererApplication::Update(const float _deltaTime)
 	};
 
 	//This sets settings, if some settings update it updates grids cache or recalculate lighting, so do not change settings frequently
-	m_volumetricContext->SetQualitySettingsAndUpdateGrid(settings);
+	m_volumarcherContext->SetQualitySettingsAndUpdateGrid(settings);
 
 	m_cloudOffsetTimer += _deltaTime * m_artSettings.m_sWindSpeed;
 	if (m_artSettings.m_sWindSpeed == 0) m_cloudOffsetTimer = 0;
@@ -349,7 +377,7 @@ void RendererApplication::Update(const float _deltaTime)
 		m_artSettings.m_frequency
 	};
 
-	m_volumetricContext->SetCloudLookSettings(artSettings);
+	m_volumarcherContext->SetCloudLookSettings(artSettings);
 }
 
 //Renders a landscape to showcase integration with existing passes, Not relevant to Volumarcher
@@ -358,12 +386,20 @@ void RendererApplication::RenderRasterizerPass()
 {
 	GraphicsContext& gfxContext = GraphicsContext::Begin(L"Rasterizer Graphics Pass");
 
+
+	//Shadows
+	Vector3 SunDirection = {m_sunDir.x, m_sunDir.y, m_sunDir.z};
+	m_shadowCamera.UpdateMatrix(-SunDirection, -SunDirection * 40.f, {80.f},
+	                            (uint32_t)g_ShadowBuffer.GetWidth(), (uint32_t)g_ShadowBuffer.GetHeight(), 16);
+	m_shadowFarPlane = 80.f;
+
 	GlobalConstants globals;
 	globals.ViewProjMatrix = m_camera.GetViewProjMatrix();
 	globals.CameraPos = m_camera.GetPosition();
-	globals.SunDirection = {m_sunDir.x, m_sunDir.y, m_sunDir.z};
+	globals.SunDirection = SunDirection;
+	globals.SunShadowMatrix = m_shadowCamera.GetShadowMatrix();
 
-	auto sky = m_volumetricContext->GetSkyBackgroundSunlight(m_sunDir);
+	auto sky = m_volumarcherContext->GetSkyBackgroundSunlight(m_sunDir);
 	globals.SunIntensity = Vector3(sky.x, sky.y, sky.z) * 0.075f;
 
 	// Begin rendering depth
@@ -392,19 +428,53 @@ void RendererApplication::RenderRasterizerPass()
 		ScopedTimer _prof(L"Depth Pre-Pass", gfxContext);
 		sorter.RenderMeshes(Renderer::MeshSorter::kZPass, gfxContext, globals);
 	}
+
 	{
 		ScopedTimer _outerprof(L"Main Render", gfxContext);
 
-		gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
-		gfxContext.ClearColor(g_SceneColorBuffer);
+		{
+			ScopedTimer _prof(L"Shadow Map", gfxContext);
 
-		gfxContext.TransitionResource(g_SSAOFullScreen, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_READ);
-		gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV_DepthReadOnly());
-		gfxContext.SetViewportAndScissor(viewport, scissor);
+			Renderer::MeshSorter shadowSorter(Renderer::MeshSorter::kShadows);
+			shadowSorter.SetCamera(m_shadowCamera);
+			shadowSorter.SetDepthStencilTarget(g_ShadowBuffer);
 
-		sorter.RenderMeshes(Renderer::MeshSorter::kOpaque, gfxContext, globals);
+			m_model.Render(shadowSorter);
+
+			shadowSorter.Sort();
+			shadowSorter.RenderMeshes(Renderer::MeshSorter::kZPass, gfxContext, globals);
+		}
+
+		//Update the cloud shadow map
+		glm::mat4 viewMat;
+		memcpy(&viewMat, &m_shadowCamera.GetViewMatrix(), sizeof(float) * 16);
+		glm::mat3 view = viewMat;
+		m_cloudShadow->RenderMapShadowing(*m_volumarcherContext,
+		                                  {
+			                                  {
+				                                  m_shadowCamera.GetPosition().GetX(),
+				                                  m_shadowCamera.GetPosition().GetY(),
+				                                  m_shadowCamera.GetPosition().GetZ()
+			                                  },
+			                                  view, 0.f, m_shadowFarPlane, 40.f, 40.f, 64, 1.f
+		                                  },
+		                                  g_ShadowBuffer.GetSRV());
+
+
+		{
+			ScopedTimer _prof(L"Color pass", gfxContext);
+			gfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+			gfxContext.ClearColor(g_SceneColorBuffer);
+
+			gfxContext.TransitionResource(g_SSAOFullScreen, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			gfxContext.TransitionResource(g_SceneDepthBuffer, D3D12_RESOURCE_STATE_DEPTH_READ);
+			gfxContext.SetRenderTarget(g_SceneColorBuffer.GetRTV(), g_SceneDepthBuffer.GetDSV_DepthReadOnly());
+			gfxContext.SetViewportAndScissor(viewport, scissor);
+
+			sorter.RenderMeshes(Renderer::MeshSorter::kOpaque, gfxContext, globals);
+		}
 	}
+
 	gfxContext.Finish();
 }
 
@@ -428,9 +498,9 @@ void RendererApplication::SetStyle(ArtisticExampleSettings _style)
 
 			environmentLook.sunDirection = glm::normalize(glm::vec3(0.5f, -2.f, 0.5f));
 
-			environmentLook.ambientLight = m_volumetricContext->GetSkyBackgroundAmbient(-environmentLook.sunDirection);
+			environmentLook.ambientLight = m_volumarcherContext->GetSkyBackgroundAmbient(-environmentLook.sunDirection);
 
-			environmentLook.sunLight = m_volumetricContext->GetSkyBackgroundSunlight(-environmentLook.sunDirection);
+			environmentLook.sunLight = m_volumarcherContext->GetSkyBackgroundSunlight(-environmentLook.sunDirection);
 
 			break;
 		}
@@ -442,8 +512,8 @@ void RendererApplication::SetStyle(ArtisticExampleSettings _style)
 			cloudLook.noiseWind = glm::vec3(1.f, 0, 0.5f) * 0.1f;
 
 			environmentLook.sunDirection = glm::normalize(glm::vec3(-0.5f, -0.2f, -0.5f));
-			environmentLook.ambientLight = m_volumetricContext->GetSkyBackgroundAmbient(-environmentLook.sunDirection);
-			environmentLook.sunLight = m_volumetricContext->GetSkyBackgroundSunlight(-environmentLook.sunDirection);
+			environmentLook.ambientLight = m_volumarcherContext->GetSkyBackgroundAmbient(-environmentLook.sunDirection);
+			environmentLook.sunLight = m_volumarcherContext->GetSkyBackgroundSunlight(-environmentLook.sunDirection);
 			break;
 		}
 	case ArtisticExampleSettings::Night:
@@ -454,16 +524,16 @@ void RendererApplication::SetStyle(ArtisticExampleSettings _style)
 			cloudLook.noiseWind = glm::vec3(0.f);
 
 			environmentLook.sunDirection = glm::normalize(glm::vec3(0.2f, 0.f, 0.5f));
-			environmentLook.ambientLight = m_volumetricContext->GetSkyBackgroundAmbient(-environmentLook.sunDirection);
-			environmentLook.sunLight = m_volumetricContext->GetSkyBackgroundSunlight(-environmentLook.sunDirection);
+			environmentLook.ambientLight = m_volumarcherContext->GetSkyBackgroundAmbient(-environmentLook.sunDirection);
+			environmentLook.sunLight = m_volumarcherContext->GetSkyBackgroundSunlight(-environmentLook.sunDirection);
 
 			break;
 		}
 	}
 	m_sunDir = -environmentLook.sunDirection;
 
-	m_volumetricContext->SetCloudLookSettings(cloudLook);
-	m_volumetricContext->SetEnvironmentSettings(environmentLook);
+	m_volumarcherContext->SetCloudLookSettings(cloudLook);
+	m_volumarcherContext->SetEnvironmentSettings(environmentLook);
 }
 
 
@@ -471,12 +541,15 @@ void RendererApplication::RenderScene(void)
 {
 #if 1
 
-	//Example pass to show integration with existing geometry pass, this draws a cube and outputs int g_SceneColorBuffer and g_SceneDepthBuffer
+
+	//Example pass to show integration with existing geometry pass, this draws a model and outputs into g_SceneColorBuffer and g_SceneDepthBuffer
+	//Not relevant to Volumarcher apart from it calling m_cloudShadow to update the shadowmap
 	RenderRasterizerPass();
 
 	//Optional skybox
-	m_volumetricContext->RenderSkyBackground(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer,
-	                                         m_camForward);
+	m_volumarcherContext->RenderSkyBackground(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,
+	                                          g_SceneDepthBuffer,
+	                                          m_camForward);
 #else
 	auto& context = GraphicsContext::Begin(L"ClearScreen");
 	float color[4] = { 0.f, 0.f, 0.01f, 1.f };
@@ -485,7 +558,7 @@ void RendererApplication::RenderScene(void)
 #endif
 
 	//Render actual volumetrics
-	m_volumetricContext->RenderVolumetrics(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer,
-	                                       m_camPos,
-	                                       m_camForward);
+	m_volumarcherContext->RenderVolumetrics(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, g_SceneDepthBuffer,
+	                                        m_camPos,
+	                                        m_camForward);
 }

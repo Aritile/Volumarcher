@@ -11,7 +11,11 @@ Volumarcher::BlueNoise::BlueNoise(const Imath_3_2::half* _data, const unsigned i
 	{
 		const unsigned int offset = _width * _height * i;
 		Texture tex;
-		tex.Create2D(sizeof(half) * _width, _width, _height, DXGI_FORMAT_R16_FLOAT, &_data[offset]);
+		tex.Create2D(sizeof(half) * _width, _width, _height, DXGI_FORMAT_R16_FLOAT, &_data[offset],
+		             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+
+
+
 		m_noiseTextures.push_back(tex);
 	}
 }

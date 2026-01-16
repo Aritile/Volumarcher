@@ -13,6 +13,7 @@
     <FxCompile Include="shaders\AtmosphereCS.hlsl" />
     <FxCompile Include="shaders\CopyToOutput.hlsl" />
     <FxCompile Include="shaders\BlockCompressSdfCS.hlsl" />
+    <FxCompile Include="shaders\ShadowMarcher.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Volumarcher.h" />
@@ -22,6 +23,7 @@
     <ClInclude Include="include\VoxelWorld.h" />
     <ClInclude Include="include\BlueNoise.h" />
     <ClInclude Include="include\CompressedSDF.h" />
+    <ClInclude Include="include\CloudShadowMap.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Volumarcher.cpp" />
@@ -29,6 +31,7 @@
     <ClCompile Include="source\VoxelWorld.cpp" />
     <ClCompile Include="source\BlueNoise.cpp" />
     <ClCompile Include="source\CompressedSDF.cpp" />
+    <ClCompile Include="source\CloudShadowMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\Common.hlsli" />

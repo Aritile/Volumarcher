@@ -29,6 +29,7 @@ TextureCube<float3> radianceIBLTexture      : register(t10);
 TextureCube<float3> irradianceIBLTexture    : register(t11);
 Texture2D<float> texSSAO			        : register(t12);
 Texture2D<float> texSunShadow			    : register(t13);
+Texture2D<float> texCloudShadow			    : register(t18);
 
 cbuffer MaterialConstants : register(b0)
 {
@@ -265,7 +266,10 @@ float4 main(VSOutput vsOutput) : SV_Target0
     float3 colorAccum = emissive;
 
 #if 1
-    colorAccum += ShadeDirectionalLight(Surface, SunDirection, SunIntensity);
+    float sunShadow = texSunShadow.SampleCmpLevelZero(shadowSampler, vsOutput.sunShadowCoord.xy, vsOutput.sunShadowCoord.z);
+    float cloudShadow = saturate(pow(texCloudShadow.SampleLevel(defaultSampler, vsOutput.sunShadowCoord.xy, 0.0),0.5));
+
+    colorAccum += ShadeDirectionalLight(Surface, SunDirection, SunIntensity) * sunShadow * cloudShadow;
 
     //uint2 pixelPos = uint2(vsOutput.position.xy);
     //float ssao = texSSAO[pixelPos];

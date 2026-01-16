@@ -19,3 +19,4 @@ Build
 
 !**/Packages/**/build
 !**/Packages/**/*.pdb
+!VolumetricRenderer.vcxproj.user

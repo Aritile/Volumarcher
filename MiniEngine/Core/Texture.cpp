@@ -33,7 +33,9 @@ static UINT BytesPerPixel(DXGI_FORMAT Format)
 	return (UINT)BitsPerPixel(Format) / 8;
 };
 
-void Texture::Create2D(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitialData)
+void Texture::Create2D(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitialData,
+                       D3D12_RESOURCE_FLAGS
+                       Flags)
 {
 	Destroy();
 
@@ -53,7 +55,7 @@ void Texture::Create2D(size_t RowPitchBytes, size_t Width, size_t Height, DXGI_F
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE | Flags;
 
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;

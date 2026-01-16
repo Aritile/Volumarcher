@@ -44,7 +44,6 @@ Texture2D<float> blueNoise : register(t5);
 Texture3D<float4> colorDensityData : register(t6);
 
 //TODO: Not hardcode this
-
 //Rendersettings
 static const float TRANSMITTANCE_CUTOFF = 0.01;
 //Base values

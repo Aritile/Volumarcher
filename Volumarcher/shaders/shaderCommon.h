@@ -4,6 +4,13 @@
 #include "glm/glm.hpp"
 using float3 = glm::vec3;
 using float4x4 = glm::mat4;
+
+struct mat3
+{
+	glm::vec4 m[3];
+};
+
+using float3x3 = mat3;
 using int3 = glm::ivec3;
 using uint = uint32_t;
 #else
@@ -12,6 +19,7 @@ using uint = uint32_t;
 
 static const uint MAX_LIGHTSOURCES = 4;
 static const uint VOLUMETRIC_PASS_GROUP_SIZE = 16;
+static const uint SHADOW_PASS_GROUP_SIZE = 16;
 static const uint COPY_GROUP_SIZE = 8;
 static const uint COMPRESSION_GROUP_SIZE = 16;
 
@@ -144,4 +152,32 @@ struct LightSource
 	float radius;
 	float3 light;
 	float pad0;
+};
+
+struct ShadowMapConstants
+{
+	float3x3 view;
+
+	float3 camPos;
+	uint screenRes;
+
+	float3 densityGridOrigin;
+	float nearPlane;
+
+	float3 densityTextureScale;
+	float farPlane;
+
+	float3 sdfGridOrigin;
+	float history;
+
+	float3 sdfTextureScale;
+	float offsetX;
+
+	float offsetZ;
+	float densityScale;
+	float orthoSizeX;
+	float orthoSizeY;
+
+	uint samples;
+	float time;
 };
